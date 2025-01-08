@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZraTransformService", "ZraTransformService\ZraTransformService.csproj", "{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowrIntegration", "ZraTransformService\PowrIntegration.csproj", "{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
