@@ -1,19 +1,29 @@
-﻿using RabbitMQ.Client;
+﻿using FluentResults;
+using PowrIntegration.Errors;
+using PowrIntegration.Extensions;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace PowrIntegration.MessageQueue;
 
 public class RabbitMqConsumer
 {
+    public enum MessageAction
+    {
+        Acknowledge = 1,
+        Requeue = 2,
+        Reject = 3
+    }
+
     private readonly IChannel _channel;
     private readonly string _queueName;
     private readonly string _deadLetterExchangeName;
     private readonly string _deadLetterQueueName;
     private readonly string _deadLetterRoutingKey;
-    private readonly Func<BasicDeliverEventArgs, CancellationToken, Task<bool>> _handleMessageFunction;
+    private readonly Func<BasicDeliverEventArgs, CancellationToken, Task<MessageAction>> _handleMessageFunction;
     private readonly ILogger<RabbitMqConsumer> _logger;
 
-    public RabbitMqConsumer(IChannel channel, string queueName, Func<BasicDeliverEventArgs, CancellationToken, Task<bool>> handleMessageFunction, ILogger<RabbitMqConsumer> logger)
+    public RabbitMqConsumer(IChannel channel, string queueName, Func<BasicDeliverEventArgs, CancellationToken, Task<MessageAction>> handleMessageFunction, ILogger<RabbitMqConsumer> logger)
     {
         _channel = channel;
         _queueName = queueName;
@@ -54,8 +64,9 @@ public class RabbitMqConsumer
                 autoDelete: false,
                 arguments: new Dictionary<string, object?>
                 {
-                { "x-dead-letter-exchange", _deadLetterExchangeName },
-                { "x-dead-letter-routing-key", _deadLetterRoutingKey }
+                    { "x-dead-letter-exchange", _deadLetterExchangeName },
+                    { "x-dead-letter-routing-key", _deadLetterRoutingKey },
+                    { "x-max-priority", 2 }
                 },
                 cancellationToken: cancellationToken);
 
@@ -63,25 +74,33 @@ public class RabbitMqConsumer
 
             consumer.ReceivedAsync += async (model, basicDeliverEventArgs) =>
             {
-                try
+                var messageId = basicDeliverEventArgs.BasicProperties.MessageId;
+
+                _logger.LogInformation("Received message with MessageId: {MessageId} from queue: {QueueName}", messageId, _queueName);
+
+                MessageAction action = await _handleMessageFunction(basicDeliverEventArgs, cancellationToken);
+
+                if (action is MessageAction.Acknowledge)
                 {
-                    _logger.LogInformation("Received message: {basicDeliverEventArgs} from queue: {queue}", basicDeliverEventArgs, _channel.CurrentQueue);
-
-                    var ack = await _handleMessageFunction(basicDeliverEventArgs, cancellationToken);
-
-                    if (!ack)
-                    {
-                        await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: false, cancellationToken);
-
-                        return;
-                    }
+                    _logger.LogInformation("Successfully processed message with MessageId: {MessageId} from queue: {QueueName}", messageId, _queueName);
 
                     await _channel.BasicAckAsync(basicDeliverEventArgs.DeliveryTag, multiple: false, cancellationToken);
+
+                    return;
                 }
-                catch (Exception ex)
+
+                if (action is MessageAction.Requeue)
                 {
-                    _logger.LogError(ex, "An error occurred processing a message from queue: {queue}", _channel.CurrentQueue);
+                    _logger.LogInformation("Requeueing message with MessageId: {MessageId} from queue: {QueueName}", messageId, _queueName);
+
+                    await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: true, cancellationToken);
+
+                    return;
                 }
+                
+                _logger.LogInformation("Rejected message with MessageId: {MessageId} from queue: {QueueName}", messageId, _queueName);
+
+                await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: false, cancellationToken);
             };
 
             await _channel.BasicConsumeAsync(
@@ -94,7 +113,7 @@ public class RabbitMqConsumer
         }
         catch(Exception ex)
         {
-            _logger.LogError(ex, "An exception occurred.");
+            _logger.LogError(ex, "An error occurred configuring queue {QueueName}.", _queueName);
         }
     }
 }

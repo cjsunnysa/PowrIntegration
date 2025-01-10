@@ -4,6 +4,7 @@ using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PowrIntegration.Data.Entities;
+using PowrIntegration.Extensions;
 using PowrIntegration.Options;
 using PowrIntegration.Powertill;
 using System.Collections.Immutable;
@@ -17,23 +18,30 @@ public sealed class PluItemsImport(IOptions<PowertillOptions> options, IDbContex
 
     protected async override Task<Result<ImmutableArray<PluItem>>> ExecuteImport(CancellationToken cancellationToken)
     {
-        var pluItemMap = new PluItemMap();
+        try
+        {
+            var pluItemMap = new PluItemMap();
 
-        var csaFile = new PowertillCsaFile<PluItem>(FilePath, null, pluItemMap);
+            var csaFile = new PowertillCsaFile<PluItem>(FilePath, null, pluItemMap);
 
-        var pluItems = csaFile.ReadRecords().ToImmutableArray();
+            var pluItems = csaFile.ReadRecords().ToImmutableArray();
 
-        var outboxItems = pluItems.MapToOutboxItems();
+            var outboxItems = pluItems.MapToOutboxItems();
 
-        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+            using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        await dbContext.BulkInsertOrUpdateAsync(pluItems, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(pluItems, cancellationToken: cancellationToken);
 
-        await dbContext.BulkInsertOrUpdateAsync(outboxItems, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(outboxItems, cancellationToken: cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Ok(pluItems);
+            return Result.Ok(pluItems);
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(new ExceptionalError($"An error occured importing PLU items from {FilePath}.", ex));
+        }
     }
 }
 

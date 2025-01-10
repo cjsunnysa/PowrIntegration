@@ -4,6 +4,7 @@ using PowrIntegration.Data;
 using PowrIntegration.Data.Exporters;
 using PowrIntegration.Data.Importers;
 using PowrIntegration.Dtos;
+using PowrIntegration.Extensions;
 using PowrIntegration.MessageQueue;
 using PowrIntegration.Options;
 using PowrIntegration.Zra;

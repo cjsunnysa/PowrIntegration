@@ -31,21 +31,24 @@ public class RabbitMqPublisher
             arguments: new Dictionary<string, object?>
             {
                 { "x-dead-letter-exchange", _deadLetterExchangeName },
-                { "x-dead-letter-routing-key", _deadLetterRoutingKey }
+                { "x-dead-letter-routing-key", _deadLetterRoutingKey },
+                { "x-max-priority", 2 }
             },
             cancellationToken: cancellationToken);
 
         var properties = new BasicProperties
         {
             Persistent = true,
+            MessageId = Guid.NewGuid().ToString(),
+            Priority = (byte)(messageType == QueueMessageType.ItemInsert ? 2 : 1),
             Headers = new Dictionary<string, object?>
             {
-                { "Type", Enum.GetName(messageType) }
-            }
+                { "Type", Enum.GetName(messageType) },
+            },
         };
 
         await _channel.BasicPublishAsync(exchange: "", routingKey: _queueName, mandatory: true, basicProperties: properties, body: message, cancellationToken: cancellationToken);
         
-        _logger.LogInformation("Message published to queueName: '{_queueName}': message: {message}", _queueName, message);
+        _logger.LogInformation("Message published to queueName: {QueueName}, Id: {MessageId}, MessageType: {MessageType}", _queueName, properties.MessageId, Enum.GetName(messageType));
     }
 }

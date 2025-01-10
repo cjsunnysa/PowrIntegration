@@ -5,10 +5,12 @@ using Microsoft.Extensions.Options;
 using PowrIntegration.Data;
 using PowrIntegration.Data.Entities;
 using PowrIntegration.Dtos;
+using PowrIntegration.Extensions;
 using PowrIntegration.Options;
 using RabbitMQ.Client.Events;
 using System.Collections.Immutable;
 using System.Text.Json;
+using static PowrIntegration.MessageQueue.RabbitMqConsumer;
 using static PowrIntegration.Zra.ZraTypes;
 
 namespace PowrIntegration.MessageQueue;
@@ -41,7 +43,7 @@ public sealed class PowertillQueueConsumer(
         }
     }
 
-    private async Task<bool> HandleMessage(BasicDeliverEventArgs args, CancellationToken cancellationToken)
+    private async Task<MessageAction> HandleMessage(BasicDeliverEventArgs args, CancellationToken cancellationToken)
     {
         try
         {
@@ -51,7 +53,7 @@ public sealed class PowertillQueueConsumer(
             {
                 messageTypeResult.LogErrors(_logger);
 
-                return false;
+                return MessageAction.Reject;
             }
 
             var messageType = messageTypeResult.Value;
@@ -62,18 +64,21 @@ public sealed class PowertillQueueConsumer(
                 QueueMessageType.ClassificationCodes => await HandleClassificationCodeMessage(args.Body, cancellationToken),
                 QueueMessageType.ZraImportItems => await HandleZraImportItemsMessage(args.Body, cancellationToken),
                 QueueMessageType.ItemInsert or QueueMessageType.ItemUpdate => await HandleItemMessage(args.Body, cancellationToken),
-                _ => Result.Fail($"Unkown message type: {Enum.GetName(messageType)}.")
+                _ => Result.Fail($"Unkown message type: {(int)messageType}.")
             };
 
             result.LogErrors(_logger);
 
-            return result.IsSuccess;
+            return
+                result.IsSuccess
+                ? MessageAction.Acknowledge
+                : MessageAction.Reject;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An exception occurred.");
+            _logger.LogError(ex, "An error occurred processing message: {MessageId} from queue: {QueueName}.", args.BasicProperties.MessageId, _options.QueueName);
 
-            return false;
+            return MessageAction.Reject;
         }
     }
 

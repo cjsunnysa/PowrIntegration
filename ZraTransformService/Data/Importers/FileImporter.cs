@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using Microsoft.Extensions.Options;
+using PowrIntegration.Extensions;
 using PowrIntegration.Options;
 using System.Collections.Immutable;
 
@@ -30,6 +31,8 @@ public abstract class FileImporter<T>(IOptions<PowertillOptions> options, string
 
         var importResult = await ExecuteImport(cancellationToken);
 
+        importResult.LogErrors(_logger);
+
         if (importResult.IsFailed)
         {
             return importResult.ToResult();
@@ -37,23 +40,32 @@ public abstract class FileImporter<T>(IOptions<PowertillOptions> options, string
 
         MoveFileToHistory(filePath);
 
+        _logger.LogInformation("Records successfully imported from {ImportFile}.", FilePath);
+
         return Result.Ok(importResult.Value);
     }
 
     private void MoveFileToHistory(string filePath)
     {
-        var historyFileName = $"{Path.GetFileNameWithoutExtension(FileName)}_{DateTime.Now:yyyyMMddhhmmssfff}{Path.GetExtension(FileName)}";
-
-        var historyDirectory = Path.Combine(ImportDirectory, "History");
-
-        if (!Directory.Exists(historyDirectory))
+        try
         {
-            Directory.CreateDirectory(historyDirectory);
+            var historyFileName = $"{Path.GetFileNameWithoutExtension(FileName)}_{DateTime.Now:yyyyMMddhhmmssfff}{Path.GetExtension(FileName)}";
+
+            var historyDirectory = Path.Combine(ImportDirectory, "History");
+
+            if (!Directory.Exists(historyDirectory))
+            {
+                Directory.CreateDirectory(historyDirectory);
+            }
+
+            var historyFilePath = Path.Combine(historyDirectory, historyFileName);
+
+            System.IO.File.Move(filePath, historyFilePath);
         }
-
-        var historyFilePath = Path.Combine(historyDirectory, historyFileName);
-
-        System.IO.File.Move(filePath, historyFilePath);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occured moving file {ImportFile} to history.", FilePath);
+        }
     }
 
     protected abstract Task<Result<ImmutableArray<T>>> ExecuteImport(CancellationToken cancellationToken);

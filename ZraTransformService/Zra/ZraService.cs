@@ -1,6 +1,10 @@
 ﻿using FluentResults;
 using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 using PowrIntegration.Dtos;
+using PowrIntegration.Errors;
+using PowrIntegration.Extensions;
 using PowrIntegration.Options;
 using PowrIntegration.Zra.ClassificationCodes;
 using PowrIntegration.Zra.GetImports;
@@ -13,15 +17,18 @@ using System.Net.Http.Json;
 
 namespace PowrIntegration.Zra;
 
-public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
+public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions, ILogger<ZraService> logger)
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly ApiOptions _apiOptions = apiOptions.Value;
+    private readonly ILogger<ZraService> _logger = logger;
 
     public async Task<Result<InitializationResponse>> InitializeDevice(CancellationToken cancellationToken)
     {
         try
         {
+            _logger.LogInformation("Sending Initialize Device request to the ZRA API.");
+
             var request = new InitializeRequest
             {
                 tpin = apiOptions.Value.TaxpayerIdentificationNumber,
@@ -33,7 +40,7 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Device Initialize call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Initialize Device request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<InitializationResponse>(cancellationToken: cancellationToken);
@@ -42,10 +49,18 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Initialize Device call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Initialize Device request. ResponseBody: {body}"));
             }
 
             return Result.Ok(response);
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Initialize Device request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Initialize Device request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {
@@ -57,6 +72,8 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
     {
         try
         {
+            _logger.LogInformation("Sending Fetch Standard Codes request to the ZRA API.");
+
             var request = new FetchStandardCodesRequest
             {
                 tpin = _apiOptions.TaxpayerIdentificationNumber,
@@ -67,7 +84,7 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Fetch Standard Codes call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Fetch Standard Codes request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<FetchStandardCodesResponse>(cancellationToken: cancellationToken);
@@ -76,12 +93,20 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Fetch Standard Codes call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Fetch Standard Codes request. ResponseBody: {body}"));
             }
 
             var standardCodeClasses = response.clsList.MapToDtos();
 
             return Result.Ok(standardCodeClasses);
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("Zra API Fetch Standard Codes request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("Zra API Fetch Standard Codes request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {
@@ -93,6 +118,8 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
     {
         try
         {
+            _logger.LogInformation("Sending Fetch Classification Codes request to the ZRA API.");
+
             var request = new FetchClassificationCodesRequest
             {
                 tpin = _apiOptions.TaxpayerIdentificationNumber,
@@ -103,7 +130,7 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Fetch Classification Codes call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Fetch Classification Codes request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<FetchClassificationCodesResponse>(cancellationToken: cancellationToken);
@@ -112,7 +139,7 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Fetch Classification Codes call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Fetch Classification Codes request. ResponseBody: {body}"));
             }
 
             var dtos = response.itemClsList.MapToDtos();
@@ -120,7 +147,15 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             return
                 response.resultCd == ZraResponseCode.SUCCESS || response.resultCd == ZraResponseCode.NO_SEARCH_RESULT
                 ? Result.Ok(dtos)
-                : Result.Fail($"Fetch Classification Codes call failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+                : Result.Fail($"ZRA API Fetch Classification Codes request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Fetch Classification Codes request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Fetch Classification Codes request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {
@@ -132,13 +167,15 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
     {
         try
         {
+            _logger.LogInformation("Sending Save Item request to the ZRA API.");
+
             var request = dto.MapToSaveItemRequest(_apiOptions);
 
             var httpResponse = await _httpClient.PostAsJsonAsync("items/saveItem", request, cancellationToken);
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Save Item call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Save Item request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<SaveItemResponse>(cancellationToken: cancellationToken);
@@ -147,13 +184,21 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Save Item call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Save Item request. ResponseBody: {body}"));
             }
 
             return
                 response.resultCd == ZraResponseCode.SUCCESS
                 ? Result.Ok()
-                : Result.Fail($"Save Item call failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+                : Result.Fail($"ZRA API Save Item request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Save Item request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Save Item request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {
@@ -165,13 +210,15 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
     {
         try
         {
+            _logger.LogInformation("Sending Update Item request to the ZRA API.");
+
             var request = dto.MapToUpdateItemRequest(_apiOptions);
 
             var httpResponse = await _httpClient.PostAsJsonAsync("items/updateItem", request, cancellationToken);
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Update Item call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Update Item request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<UpdateItemResponse>(cancellationToken: cancellationToken);
@@ -180,13 +227,21 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Update Item call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Update Item request. ResponseBody: {body}"));
             }
 
             return
                 response.resultCd == ZraResponseCode.SUCCESS
                 ? Result.Ok()
-                : Result.Fail($"Update Item call failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+                : Result.Fail($"ZRA API Update Item request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Update Item request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Update Item request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {
@@ -198,6 +253,8 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
     {
         try
         {
+            _logger.LogInformation("Sending Get Imports request to the ZRA API.");
+
             var request = new GetImportsRequest
             {
                 tpin = _apiOptions.TaxpayerIdentificationNumber,
@@ -208,7 +265,7 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return Result.Fail(new Error($"Error response from Get Imports call - Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+                return Result.Fail(new Error($"Error response from ZRA API Get Imports request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
 
             var response = await httpResponse.Content.ReadFromJsonAsync<GetImportsResponse>(cancellationToken: cancellationToken);
@@ -217,15 +274,23 @@ public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions)
             {
                 string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                return Result.Fail(new Error($"Unexepected response content from Get Imports call. ResponseBody: {body}"));
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Get Imports request. ResponseBody: {body}"));
             }
 
-            var dtos = response.data.MapToDtos();
+            var dtos = response.data?.MapToDtos() ?? [];
 
             return
                 response.resultCd == ZraResponseCode.SUCCESS || response.resultCd == ZraResponseCode.NO_SEARCH_RESULT
-                ? Result.Ok()
-                : Result.Fail($"Get Imports call failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+                ? Result.Ok(dtos)
+                : Result.Fail($"ZRA API Get Imports request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Initialize Device request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Initialize Device request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {

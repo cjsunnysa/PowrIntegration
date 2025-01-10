@@ -4,8 +4,11 @@ using PowrIntegration.Options;
 using RabbitMQ.Client.Events;
 using PowrIntegration.Zra;
 using System.Text.Json;
-using PowrIntegration.Data.Entities;
 using PowrIntegration.Dtos;
+using PowrIntegration.Extensions;
+using static PowrIntegration.MessageQueue.RabbitMqConsumer;
+using PowrIntegration.Errors;
+using System;
 
 namespace PowrIntegration.MessageQueue;
 
@@ -37,7 +40,7 @@ public sealed class ZraQueueConsumer(
         }
     }
 
-    private async Task<bool> HandleMessage(BasicDeliverEventArgs args, CancellationToken cancellationToken)
+    private async Task<MessageAction> HandleMessage(BasicDeliverEventArgs args, CancellationToken cancellationToken)
     {
         try
         { 
@@ -46,8 +49,8 @@ public sealed class ZraQueueConsumer(
             if (messageTypeResult.IsFailed)
             {
                 messageTypeResult.LogErrors(_logger);
-                
-                return false;
+
+                return MessageAction.Reject;
             }
 
             var messageType = messageTypeResult.Value;
@@ -61,13 +64,30 @@ public sealed class ZraQueueConsumer(
 
             result.LogErrors(_logger);
 
-            return result.IsSuccess;
+            if (result.IsFailed && result.HasError<CircuitBreakerError>())
+            {
+                _logger.LogInformation("Pausing queue: {QueueName} processing due to a circuit breaker being open.", _apiOptions.QueueName);
+
+                Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
+                
+                return MessageAction.Requeue;
+            }
+
+            if (result.IsFailed && result.HasError<HttpRequestTimoutError>())
+            {
+                return MessageAction.Requeue;
+            }
+
+            return 
+                result.IsSuccess 
+                ? MessageAction.Acknowledge 
+                : MessageAction.Reject;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An exception occured processing a message from the {ApiQueueName} queue.", _apiOptions.QueueName);
+            _logger.LogError(ex, "An error occured processing message: {MessageId} from the queue: {QueueName}.", args.BasicProperties.MessageId, _apiOptions.QueueName);
 
-            return false;
+            return MessageAction.Reject;
         }
     }
 

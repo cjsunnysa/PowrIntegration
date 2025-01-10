@@ -4,6 +4,7 @@ using PowrIntegration;
 using PowrIntegration.Data;
 using PowrIntegration.Data.Exporters;
 using PowrIntegration.Data.Importers;
+using PowrIntegration.Extensions;
 using PowrIntegration.MessageQueue;
 using PowrIntegration.Options;
 using PowrIntegration.Zra;
@@ -25,7 +26,7 @@ builder.Services.Configure<ServicesOptions>(builder.Configuration.GetSection(Ser
 builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.KEY));
 builder.Services.Configure<PowertillOptions>(builder.Configuration.GetSection(PowertillOptions.KEY));
 
-builder.Services.AddHttpClient<ZraService>((services, client) => client.BaseAddress = new Uri(services.GetRequiredService<IOptions<ApiOptions>>().Value.ApiBaseUrl));
+builder.Services.ConfigureHttpClients();
 
 builder.Services
     .AddDbContextFactory<PowrIntegrationDbContext>(options =>

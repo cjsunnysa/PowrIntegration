@@ -1,5 +1,7 @@
-﻿using RabbitMQ.Client;
+﻿using FluentResults;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using static PowrIntegration.MessageQueue.RabbitMqConsumer;
 
 namespace PowrIntegration.MessageQueue;
 
@@ -7,37 +9,33 @@ public class RabbitMqFactory(IServiceProvider services, ILogger<RabbitMqFactory>
 {
     private readonly IServiceProvider _services = services;
     private readonly ILogger<RabbitMqFactory> _logger = logger;
-    private readonly Dictionary<string, IConnection> _connections = [];
+    private readonly Dictionary<string, (IConnection Connection, IChannel Channel)> _connections = [];
 
-    public async Task<RabbitMqConsumer> CreateConsumer(string host, string queueName, Func<BasicDeliverEventArgs, CancellationToken, Task<bool>> messageHandler, CancellationToken cancellationToken)
+    public async Task<RabbitMqConsumer> CreateConsumer(string host, string queueName, Func<BasicDeliverEventArgs, CancellationToken, Task<MessageAction>> messageHandler, CancellationToken cancellationToken)
     {
-        var connection = await GetConnection(host, cancellationToken);
-
-        var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        IChannel channel = await GetChannel(host, cancellationToken);
 
         return new RabbitMqConsumer(channel, queueName, messageHandler, _services.GetRequiredService<ILogger<RabbitMqConsumer>>());
     }
 
     public async Task<RabbitMqPublisher> CreatePublisher(string host, string queueName, CancellationToken cancellationToken)
     {
-        var connection = await GetConnection(host, cancellationToken);
-
-        var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        IChannel channel = await GetChannel(host, cancellationToken);
 
         return new RabbitMqPublisher(channel, queueName, _services.GetRequiredService<ILogger<RabbitMqPublisher>>());
     }
 
-    private async Task<IConnection> GetConnection(string host, CancellationToken cancellationToken)
+    private async Task<IChannel> GetChannel(string host, CancellationToken cancellationToken)
     {
-        if (!_connections.TryGetValue(host, out var connection))
+        if (!_connections.TryGetValue(host, out var connectionChannel))
         {
-            connection = await CreateNewConnection(host, cancellationToken);
+            connectionChannel = await CreateNewConnectionChannel(host, cancellationToken);
         }
 
-        return connection!;
+        return connectionChannel.Channel;
     }
 
-    private async Task<IConnection?> CreateNewConnection(string host, CancellationToken cancellationToken)
+    private async Task<(IConnection, IChannel)> CreateNewConnectionChannel(string host, CancellationToken cancellationToken)
     {
         var factory = new ConnectionFactory
         {
@@ -53,9 +51,11 @@ public class RabbitMqFactory(IServiceProvider services, ILogger<RabbitMqFactory>
         connection.RecoverySucceededAsync += OnRecoverySucceeded;
         connection.ConnectionRecoveryErrorAsync += OnConnectionRecoveryError;
 
-        _connections.Add(host, connection);
+        var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-        return connection;
+        _connections.Add(host, (connection, channel));
+
+        return (connection, channel);
     }
 
     private async Task OnRecoverySucceeded(object sender, AsyncEventArgs args)
@@ -93,10 +93,12 @@ public class RabbitMqFactory(IServiceProvider services, ILogger<RabbitMqFactory>
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var connection in _connections.Values)
+        foreach (var (connection, channel) in _connections.Values)
         {
             try
             {
+                await channel.CloseAsync();
+                channel.Dispose();
                 await connection.CloseAsync();
                 connection.Dispose();
             }

@@ -12,7 +12,7 @@ using System.Text;
 using System.Text.Json;
 using static PowrIntegration.Zra.StandardCodes.FetchStandardCodesResponse;
 
-namespace PowrIntegration;
+namespace PowrIntegration.Extensions;
 public static class Mapping
 {
     public static ImmutableArray<StandardCodeClassDto> MapToDtos(this ImmutableArray<CodeClass> classes)
@@ -31,7 +31,7 @@ public static class Mapping
                     })
                     .ToImmutableArray()
             })
-            .ToImmutableArray();            
+            .ToImmutableArray();
     }
 
     public static ImmutableArray<ZraStandardCodeClass> MapToEntities(this ImmutableArray<StandardCodeClassDto> dtos)
@@ -74,25 +74,25 @@ public static class Mapping
         return items
             .Select(x => new ImportItemDto
             {
-                TaskCode = x.taskCd,
+                TaskCode = x.taskCd ?? string.Empty,
                 DeclarationNumber = x.dclNo,
                 DeclarationReferenceNumber = x.dclRefNum,
                 AgentName = x.agntNm,
                 ItemSequenceNumber = x.itemSeq,
-                ItemName = x.itemNm,
-                DeclarationDate = x.dclDe == "-1" ? null : DateTime.ParseExact(x.dclDe, "yyyyMMdd", CultureInfo.InvariantCulture),
+                ItemName = x.itemNm ?? string.Empty,
+                DeclarationDate = x.dclDe is null || x.dclDe == "-1" ? null : DateTime.ParseExact(x.dclDe, "yyyyMMdd", CultureInfo.InvariantCulture),
                 HarmonizedSystemCode = x.hsCd,
-                SupplierName = x.spplrNm,
+                SupplierName = x.spplrNm ?? string.Empty,
                 ExportCountryCode = x.exptNatCd,
                 OriginCountryCode = x.orgnNatCd,
                 NetWeight = x.netWt,
-                PackageQuantity = x.pkg,
+                PackageQuantity = x.pkg ?? 0,
                 PackageUnitCode = x.pkgUnitCd,
-                Quantity = x.qty,
+                Quantity = x.qty ?? 0,
                 QuantityUnitCode = x.qtyUnitCd,
                 TotalWeight = x.totWt,
-                InvoiceForeignCurrencyAmount = x.invcFcurAmt,
-                InvoiceForeignCurrencyCode = x.invcFcurCd,
+                InvoiceForeignCurrencyAmount = x.invcFcurAmt ?? 0,
+                InvoiceForeignCurrencyCode = x.invcFcurCd ?? string.Empty,
                 InvoiceForeignCurrencyExchangeRate = x.invcFcurExcrt
             })
             .ToImmutableArray();

@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace PowrIntegration;
+namespace PowrIntegration.Extensions;
 
 public static class ResultExtensions
 {

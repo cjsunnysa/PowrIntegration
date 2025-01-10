@@ -24,7 +24,7 @@ public sealed class Outbox(IDbContextFactory<PowrIntegrationDbContext> dbContext
 
                 if (publishResult.IsFailed && outboxItem.FailureCount < 4)
                 {
-                    _logger.LogError("Unable to publish outbox item to api message queue. Type: {MessageType}, Body: {MessageBody}", outboxItem.MessageType, outboxItem.MessageBody);
+                    _logger.LogError("Unable to publish outbox item to api message queue. Type: {MessageType}, OutboxId: {OutboxId}", outboxItem.MessageType, outboxItem.Id);
 
                     outboxItem.FailureCount++;
                 }
@@ -33,12 +33,13 @@ public sealed class Outbox(IDbContextFactory<PowrIntegrationDbContext> dbContext
                     dbContext.OutboxItems.Remove(outboxItem);
                 }
 
-                await dbContext.SaveChangesAsync(cancellationToken);
             }
+            
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An exception occurred processing the outbox.");
+            _logger.LogError(ex, "An error occurred processing the outbox.");
         }
     }
 }

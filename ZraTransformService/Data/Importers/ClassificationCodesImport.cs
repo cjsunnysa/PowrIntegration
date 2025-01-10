@@ -60,32 +60,39 @@ public sealed class ClassificationCodesImport(
 
     protected override async Task<Result<ImmutableArray<ZraClassificationCode>>> ExecuteImport(CancellationToken cancellationToken)
     {
-        var filePath = FilePath;
+        try
+        {
+            var filePath = FilePath;
 
-        var map = new CsaFileRowMap();
+            var map = new CsaFileRowMap();
 
-        var csaFile = new CsaFile<CsaFileRow>(
-            filePath,
-            true,
-            args => args.Row[2] == string.Empty || args.Row[5] == string.Empty || args.Row[8] == string.Empty || args.Row[11] == string.Empty,
-            map);
+            var csaFile = new CsaFile<CsaFileRow>(
+                filePath,
+                true,
+                args => args.Row[2] == string.Empty || args.Row[5] == string.Empty || args.Row[8] == string.Empty || args.Row[11] == string.Empty,
+                map);
 
-        var csaRows = csaFile.ReadRecords();
+            var csaRows = csaFile.ReadRecords();
 
-        var segments = csaRows.DistinctBy(x => x.Segment).Select(x => new ZraClassificationSegment { Code = x.Segment, Name = x.SegmentTitle, Description = x.SegmentDefinition }).ToImmutableArray();
-        var families = csaRows.DistinctBy(x => x.Family).Select(x => new ZraClassificationFamily { Code = x.Family, Name = x.FamilyTitle, Description = x.FamilyDefinition, SegmentCode = x.Segment }).ToImmutableArray();
-        var classes = csaRows.DistinctBy(x => x.Class).Select(x => new ZraClassificationClass { Code = x.Class, Name = x.ClassTitle, Description = x.ClassDefinition, FamilyCode = x.Family }).ToImmutableArray();
-        var codes = csaRows.DistinctBy(x => x.Commodity).Select(x => new ZraClassificationCode { Code = x.Commodity, Name = x.CommodityTitle, Description = x.CommodityDefinition, ClassCode = x.Class, ShouldUse = true }).ToImmutableArray();
+            var segments = csaRows.DistinctBy(x => x.Segment).Select(x => new ZraClassificationSegment { Code = x.Segment, Name = x.SegmentTitle, Description = x.SegmentDefinition }).ToImmutableArray();
+            var families = csaRows.DistinctBy(x => x.Family).Select(x => new ZraClassificationFamily { Code = x.Family, Name = x.FamilyTitle, Description = x.FamilyDefinition, SegmentCode = x.Segment }).ToImmutableArray();
+            var classes = csaRows.DistinctBy(x => x.Class).Select(x => new ZraClassificationClass { Code = x.Class, Name = x.ClassTitle, Description = x.ClassDefinition, FamilyCode = x.Family }).ToImmutableArray();
+            var codes = csaRows.DistinctBy(x => x.Commodity).Select(x => new ZraClassificationCode { Code = x.Commodity, Name = x.CommodityTitle, Description = x.CommodityDefinition, ClassCode = x.Class, ShouldUse = true }).ToImmutableArray();
 
-        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+            using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        await dbContext.BulkInsertOrUpdateAsync(segments, cancellationToken: cancellationToken);
-        await dbContext.BulkInsertOrUpdateAsync(families, cancellationToken: cancellationToken);
-        await dbContext.BulkInsertOrUpdateAsync(classes, cancellationToken: cancellationToken);
-        await dbContext.BulkInsertOrUpdateAsync(codes, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(segments, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(families, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(classes, cancellationToken: cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(codes, cancellationToken: cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Ok(codes);
+            return Result.Ok(codes);
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(new ExceptionalError($"An error occured importing classifcation codes from {FilePath}", ex));
+        }
     }
 }
