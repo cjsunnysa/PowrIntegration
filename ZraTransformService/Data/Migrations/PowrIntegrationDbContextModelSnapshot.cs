@@ -17,6 +17,36 @@ namespace PowrIntegration.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
+            modelBuilder.Entity("PowrIntegration.Data.Entities.Ingredient", b =>
+                {
+                    b.Property<long>("PluNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("IngredientNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("IngredientQuantity")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NewPluNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("RecipeGrossCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("RecipeNettCost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("UnitStockRatio")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PluNumber", "IngredientNumber");
+
+                    b.HasIndex("IngredientNumber");
+
+                    b.ToTable("Ingredients");
+                });
+
             modelBuilder.Entity("PowrIntegration.Data.Entities.OutboxItem", b =>
                 {
                     b.Property<int>("Id")
@@ -394,6 +424,19 @@ namespace PowrIntegration.Data.Migrations
                     b.ToTable("PluItems");
                 });
 
+            modelBuilder.Entity("PowrIntegration.Data.Entities.Recipe", b =>
+                {
+                    b.Property<long>("PluNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Portions")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PluNumber");
+
+                    b.ToTable("Recipes");
+                });
+
             modelBuilder.Entity("PowrIntegration.Data.Entities.ZraClassificationClass", b =>
                 {
                     b.Property<long>("Code")
@@ -594,6 +637,36 @@ namespace PowrIntegration.Data.Migrations
                     b.ToTable("ZraStandardCodeClasses");
                 });
 
+            modelBuilder.Entity("PowrIntegration.Data.Entities.Ingredient", b =>
+                {
+                    b.HasOne("PowrIntegration.Data.Entities.PluItem", "IngredientPlu")
+                        .WithMany("IngredientIn")
+                        .HasForeignKey("IngredientNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PowrIntegration.Data.Entities.Recipe", "Recipe")
+                        .WithMany("Ingredients")
+                        .HasForeignKey("PluNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IngredientPlu");
+
+                    b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("PowrIntegration.Data.Entities.Recipe", b =>
+                {
+                    b.HasOne("PowrIntegration.Data.Entities.PluItem", "Plu")
+                        .WithOne("Recipe")
+                        .HasForeignKey("PowrIntegration.Data.Entities.Recipe", "PluNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plu");
+                });
+
             modelBuilder.Entity("PowrIntegration.Data.Entities.ZraClassificationClass", b =>
                 {
                     b.HasOne("PowrIntegration.Data.Entities.ZraClassificationFamily", "Family")
@@ -634,6 +707,18 @@ namespace PowrIntegration.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Class");
+                });
+
+            modelBuilder.Entity("PowrIntegration.Data.Entities.PluItem", b =>
+                {
+                    b.Navigation("IngredientIn");
+
+                    b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("PowrIntegration.Data.Entities.Recipe", b =>
+                {
+                    b.Navigation("Ingredients");
                 });
 
             modelBuilder.Entity("PowrIntegration.Data.Entities.ZraClassificationClass", b =>

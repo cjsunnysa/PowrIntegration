@@ -207,6 +207,24 @@ namespace PowrIntegration.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Recipes",
+                columns: table => new
+                {
+                    PluNumber = table.Column<long>(type: "INTEGER", nullable: false),
+                    Portions = table.Column<decimal>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Recipes", x => x.PluNumber);
+                    table.ForeignKey(
+                        name: "FK_Recipes_PluItems_PluNumber",
+                        column: x => x.PluNumber,
+                        principalTable: "PluItems",
+                        principalColumn: "PluNumber",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ZraClassificationFamilies",
                 columns: table => new
                 {
@@ -243,6 +261,35 @@ namespace PowrIntegration.Data.Migrations
                         column: x => x.ClassCode,
                         principalTable: "ZraStandardCodeClasses",
                         principalColumn: "Code",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Ingredients",
+                columns: table => new
+                {
+                    PluNumber = table.Column<long>(type: "INTEGER", nullable: false),
+                    IngredientNumber = table.Column<long>(type: "INTEGER", nullable: false),
+                    IngredientQuantity = table.Column<decimal>(type: "TEXT", nullable: true),
+                    UnitStockRatio = table.Column<decimal>(type: "TEXT", nullable: true),
+                    RecipeNettCost = table.Column<decimal>(type: "TEXT", nullable: true),
+                    RecipeGrossCost = table.Column<decimal>(type: "TEXT", nullable: true),
+                    NewPluNumber = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Ingredients", x => new { x.PluNumber, x.IngredientNumber });
+                    table.ForeignKey(
+                        name: "FK_Ingredients_PluItems_IngredientNumber",
+                        column: x => x.IngredientNumber,
+                        principalTable: "PluItems",
+                        principalColumn: "PluNumber",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Ingredients_Recipes_PluNumber",
+                        column: x => x.PluNumber,
+                        principalTable: "Recipes",
+                        principalColumn: "PluNumber",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -289,6 +336,11 @@ namespace PowrIntegration.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Ingredients_IngredientNumber",
+                table: "Ingredients",
+                column: "IngredientNumber");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ZraClassificationClasses_FamilyCode",
                 table: "ZraClassificationClasses",
                 column: "FamilyCode");
@@ -313,10 +365,10 @@ namespace PowrIntegration.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "OutboxItems");
+                name: "Ingredients");
 
             migrationBuilder.DropTable(
-                name: "PluItems");
+                name: "OutboxItems");
 
             migrationBuilder.DropTable(
                 name: "ZraClassificationCodes");
@@ -328,10 +380,16 @@ namespace PowrIntegration.Data.Migrations
                 name: "ZraStandardCodes");
 
             migrationBuilder.DropTable(
+                name: "Recipes");
+
+            migrationBuilder.DropTable(
                 name: "ZraClassificationClasses");
 
             migrationBuilder.DropTable(
                 name: "ZraStandardCodeClasses");
+
+            migrationBuilder.DropTable(
+                name: "PluItems");
 
             migrationBuilder.DropTable(
                 name: "ZraClassificationFamilies");

@@ -23,6 +23,7 @@ public class Worker : BackgroundService
     private readonly ZraService _zraService;
     private readonly PluItemsImport _pluItemsImport;
     private readonly ClassificationCodesImport _classificationImport;
+    private readonly IngredientsImport _ingredientsImport;
     private readonly ILogger<Worker> _logger;
 
     public Worker(
@@ -35,11 +36,13 @@ public class Worker : BackgroundService
         ZraService zraService,
         PluItemsImport pluItemsImport,
         ClassificationCodesImport classificationImport,
+        IngredientsImport ingredientsImport,
         ILogger<Worker> logger)
     {
         _servicesOptions = servicesOptions.Value;
         _pluItemsImport = pluItemsImport;
         _classificationImport = classificationImport;
+        _ingredientsImport = ingredientsImport;
         _dbContextFactory = dbContextFactory;
         _powertillQueuePublisher = powertillQueuePublisher;
         _powertillQueueConsumer = powertillQueueConsumer;
@@ -53,6 +56,7 @@ public class Worker : BackgroundService
     {
         await _classificationImport.Execute(cancellationToken);
         await _pluItemsImport.Execute(cancellationToken);
+        await _ingredientsImport.Execute(cancellationToken);
 
         var fetchStandardCodesResult = await _zraService.FetchStandardCodes(cancellationToken);
 

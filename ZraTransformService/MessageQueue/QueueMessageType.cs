@@ -9,5 +9,7 @@ public enum QueueMessageType
     StandardCodes = 5,
     ClassificationCodes = 6,
     ZraImportItems = 7,
-    Sale = 8
+    Sale = 8,
+    IngredientInsert = 9,
+    IngredientUpdate = 10
 }

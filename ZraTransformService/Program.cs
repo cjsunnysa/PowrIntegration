@@ -39,6 +39,7 @@ builder.Services.AddSingleton<PowertillQueuePublisher>();
 builder.Services.AddSingleton<PowertillQueueConsumer>();
 builder.Services.AddSingleton<Outbox>();
 builder.Services.AddSingleton<PluItemsImport>();
+builder.Services.AddSingleton<IngredientsImport>();
 builder.Services.AddSingleton<ClassificationCodesImport>();
 builder.Services.AddHostedService<Worker>();
 

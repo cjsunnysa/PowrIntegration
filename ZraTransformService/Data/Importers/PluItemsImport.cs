@@ -10,7 +10,6 @@ using PowrIntegration.Powertill;
 using System.Collections.Immutable;
 
 namespace PowrIntegration.Data.Importers;
-
 public sealed class PluItemsImport(IOptions<PowertillOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsImport> logger)
     : FileImporter<PluItem>(options, "PluCreat.csa", logger)
 {

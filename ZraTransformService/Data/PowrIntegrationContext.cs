@@ -7,6 +7,8 @@ namespace PowrIntegration.Data
     {
         public DbSet<OutboxItem> OutboxItems { get; set; }
         public DbSet<PluItem> PluItems { get; set; }
+        public DbSet<Recipe> Recipes { get; set; }
+        public DbSet<Ingredient> Ingredients { get; set; }
         public DbSet<ZraClassificationClass> ZraClassificationClasses { get; set; }
         public DbSet<ZraClassificationCode> ZraClassificationCodes { get; set; }
         public DbSet<ZraClassificationFamily> ZraClassificationFamilies { get; set; }
@@ -17,6 +19,9 @@ namespace PowrIntegration.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<OutboxItem>()
+                .HasKey(x => x.Id);                
+
             // OutboxItem configuration
             modelBuilder.Entity<OutboxItem>()
                 .Property(o => o.Id)
@@ -37,6 +42,42 @@ namespace PowrIntegration.Data
                 .Property(p => p.PluNumber)
                 .IsRequired()
                 .ValueGeneratedNever();
+
+            modelBuilder.Entity<PluItem>()
+                .HasOne(x => x.Recipe)
+                .WithOne(x => x.Plu)
+                .HasForeignKey((PluItem x) => x.PluNumber);
+
+            modelBuilder.Entity<PluItem>()
+                .HasMany(x => x.IngredientIn)
+                .WithOne(x => x.IngredientPlu)
+                .HasForeignKey(x => x.IngredientNumber);
+
+            modelBuilder.Entity<Recipe>()
+                .HasKey(x => x.PluNumber);
+
+            modelBuilder.Entity<Recipe>()
+                .HasMany(x => x.Ingredients)
+                .WithOne(x => x.Recipe)
+                .HasForeignKey(x => x.PluNumber);
+
+            modelBuilder.Entity<Recipe>()
+                .HasOne(x => x.Plu)
+                .WithOne(x => x.Recipe)
+                .HasForeignKey((Recipe x) => x.PluNumber);
+
+            modelBuilder.Entity<Ingredient>()
+                .HasKey(x => new { x.PluNumber, x.IngredientNumber });
+
+            modelBuilder.Entity<Ingredient>()
+                .HasOne(x => x.IngredientPlu)
+                .WithMany(x => x.IngredientIn)
+                .HasForeignKey(x => x.IngredientNumber);
+
+            modelBuilder.Entity<Ingredient>()
+                .HasOne(x => x.Recipe)
+                .WithMany(x => x.Ingredients)
+                .HasForeignKey(x => x.PluNumber);
 
             modelBuilder.Entity<ZraClassificationSegment>()
                 .HasKey(c => c.Code);

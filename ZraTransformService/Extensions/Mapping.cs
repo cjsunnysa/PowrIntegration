@@ -1,4 +1,5 @@
 ﻿using PowrIntegration.Data.Entities;
+using PowrIntegration.Data.Importers;
 using PowrIntegration.Dtos;
 using PowrIntegration.MessageQueue;
 using PowrIntegration.Options;
@@ -10,6 +11,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static PowrIntegration.Data.Importers.IngredientsImport;
 using static PowrIntegration.Zra.StandardCodes.FetchStandardCodesResponse;
 
 namespace PowrIntegration.Extensions;
@@ -320,5 +322,46 @@ public static class Mapping
             ClerkEdited = dto.ClerkEdited,
             Version = dto.Version,
         };
+    }
+
+    public static ImmutableArray<Recipe> MapToRecipes(this IEnumerable<IGrouping<long, IngredientDto>> groups)
+    {
+        return groups
+            .Select(x =>
+                x.First(y => y.IsHeader)
+                .ToRecipe())
+            .ToImmutableArray();
+    }
+
+    public static Recipe ToRecipe(this IngredientDto dto)
+    {
+        return new Recipe
+        {
+            PluNumber = dto.PluNumber,
+            Portions = dto.IngredientQuantity ?? 0m
+        };
+    }
+
+    public static ImmutableArray<Ingredient> MapToIngredients(this IEnumerable<IGrouping<long, IngredientDto>> groups)
+    {
+        return groups
+            .SelectMany(x => 
+                x.Where(y => !y.IsHeader).ToIngredient(x.First(y => y.IsHeader)))
+            .ToImmutableArray();
+    }
+
+    public static ImmutableArray<Ingredient> ToIngredient(this IEnumerable<IngredientDto> dtos, IngredientDto header)
+    {
+        return dtos
+            .Select(x => new Ingredient
+            {
+                PluNumber = header.PluNumber,
+                IngredientNumber = x.IngredientNumber,
+                IngredientQuantity = x.IngredientQuantity,
+                RecipeGrossCost = x.RecipeGrossCost,
+                RecipeNettCost = x.RecipeNettCost,
+                UnitStockRatio = x.UnitStockRatio
+            })
+            .ToImmutableArray();
     }
 }

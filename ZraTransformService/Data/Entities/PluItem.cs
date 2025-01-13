@@ -1,4 +1,5 @@
 ﻿using PowrIntegration.Dtos;
+using System.Collections.Immutable;
 
 namespace PowrIntegration.Data.Entities;
 
@@ -200,6 +201,9 @@ public sealed record PluItem
     public DateTime DateTimeEdited { get; set; }
     public int? ClerkEdited { get; set; }
     public string? Version { get; set; }
+
+    public Recipe? Recipe { get; set; }
+    public List<Ingredient> IngredientIn { get; init; } = [];
 
     public void UpdateFrom(PluItemDto plu)
     {

@@ -49,3 +49,11 @@ public sealed class PowertillDateConverter : DefaultTypeConverter
     }
 }
 
+public sealed class YesNoConverter : DefaultTypeConverter
+{
+    public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+    {
+        return text?.Trim() == "Y";
+    }
+}
+

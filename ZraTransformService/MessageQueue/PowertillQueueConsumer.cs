@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PowrIntegration.Data;
 using PowrIntegration.Data.Entities;
+using PowrIntegration.Data.Importers;
 using PowrIntegration.Dtos;
 using PowrIntegration.Extensions;
 using PowrIntegration.Options;
@@ -64,6 +65,7 @@ public sealed class PowertillQueueConsumer(
                 QueueMessageType.ClassificationCodes => await HandleClassificationCodeMessage(args.Body, cancellationToken),
                 QueueMessageType.ZraImportItems => await HandleZraImportItemsMessage(args.Body, cancellationToken),
                 QueueMessageType.ItemInsert or QueueMessageType.ItemUpdate => await HandleItemMessage(args.Body, cancellationToken),
+                QueueMessageType.IngredientInsert or QueueMessageType.IngredientUpdate => await HandleIngredientMessage(args.Body, cancellationToken),
                 _ => Result.Fail($"Unkown message type: {(int)messageType}.")
             };
 
@@ -285,6 +287,43 @@ public sealed class PowertillQueueConsumer(
         using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         await dbContext.BulkInsertOrUpdateAsync(zraImportItems, cancellationToken: cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
+    }
+
+    private async Task<Result> HandleIngredientMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(body.ToArray());
+
+        var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<IngredientDto>>(stream, cancellationToken: cancellationToken);
+
+        var header = dtos.FirstOrDefault(x => x.IsHeader);
+
+        if (header is null)
+        {
+            return Result.Fail("Ingredient records are missing a header.");
+        }
+
+        var recipe = header.ToRecipe();
+
+        var ingredients = dtos.Where(x => !x.IsHeader).ToIngredient(header);
+
+        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken: cancellationToken);
+
+        var existingRecipe = await dbContext.Recipes.FindAsync([recipe.PluNumber], cancellationToken: cancellationToken);
+
+        if (existingRecipe is null)
+        {
+            recipe.Ingredients = [.. ingredients];
+            dbContext.Recipes.Add(recipe);
+        }
+        else
+        {
+            existingRecipe.Portions = recipe.Portions;
+            existingRecipe.Ingredients = [.. ingredients];
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
