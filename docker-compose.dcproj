@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" Sdk="Microsoft.Docker.Sdk">
+  <PropertyGroup Label="Globals">
+    <ProjectVersion>2.1</ProjectVersion>
+    <DockerTargetOS>Linux</DockerTargetOS>
+    <DockerPublishLocally>False</DockerPublishLocally>
+    <ProjectGuid>2c5d3338-5275-45be-8b25-a5f5c6adf41e</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="collector-config.yml" />
+    <None Include="docker-compose.override.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
+    <None Include="docker-compose.yml" />
+    <None Include=".dockerignore" />
+    <None Include="prometheus.yml" />
+    <None Include="root-ca.pem" />
+    <None Include="sandboxvsdc.war" />
+  </ItemGroup>
+</Project>

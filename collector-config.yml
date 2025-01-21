@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 512
+
+exporters:
+  debug:
+    verbosity: detailed    
+  prometheus:
+    endpoint: 0.0.0.0:9464
+  opensearch/log:
+    http: 
+      endpoint: https://opensearch-node1:9200     # OpenSearch endpoint
+      tls:
+        insecure_skip_verify: true
+        ca_file: /etc/certs/opensearch/root-ca.pem
+      auth:
+        authenticator: basicauth/client
+    logs_index: powrintegration
+    sending_queue:   
+      storage: file_storage/opensearch
+
+extensions:
+  file_storage/opensearch:
+    directory: /usr/share/otel-collector/data
+    timeout: 10s
+  
+  basicauth/client:
+    client_auth: 
+      username: admin
+      password: a2sdfkl!nvnas4kDasdfjjl
+
+service:
+  extensions: [file_storage/opensearch, basicauth/client]    
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [opensearch/log, debug]

@@ -1,0 +1,6 @@
+services:
+  powrintegration:
+    image: ${DOCKER_REGISTRY-}powrintegration
+    build:
+      context: ZraTransformService
+      dockerfile: Dockerfile

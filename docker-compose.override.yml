@@ -1,0 +1,125 @@
+services:
+  opensearch-node1:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true  # along with the memlock settings below, disables swapping
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=a2sdfkl!nvnas4kDasdfjjl    # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and higher
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536  # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600  # required for Performance Analyzer
+  opensearch-node2:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node2
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=a2sdfkl!nvnas4kDasdfjjl
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data2:/usr/share/opensearch/data
+  
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - '5601'
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
+
+  otel-collector:
+    privileged: true
+    image: otel/opentelemetry-collector-contrib:0.117.0
+    container_name: otel-collector
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "9464:9464"   # Prometheus metrics
+    volumes:
+      - otel-collector-data:/usr/share/otel-collector/data
+      - ./collector-config.yml:/etc/otel-collector-config.yml
+      - ./root-ca.pem:/etc/certs/opensearch/root-ca.pem
+    command: ["--config=/etc/otel-collector-config.yml"]
+  
+  powrintegration:
+    image: ${DOCKER_REGISTRY-}powrintegration
+    container_name: powrintegration
+    build:
+      context: ZraTransformService
+      dockerfile: Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      Services__Api__ApiBaseUrl: http://host.docker.internal:8080/sandboxvdsc/
+    depends_on:
+      - otel-collector
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - c:\\PowrIntegration:/usr/local/powrintegration
+
+  rabbitmq:
+    image: rabbitmq:4.0.5-management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672" # RabbitMQ main port
+      - "15672:15672" # Management console
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+        - prometheus_data:/prometheus
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+        - "9090:9090" # Prometheus web UI
+    command:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+        - GF_SECURITY_ADMIN_USER=admin # Grafana admin username
+        - GF_SECURITY_ADMIN_PASSWORD=admin # Grafana admin password
+    volumes:
+        - grafana_data:/var/lib/grafana
+    ports:
+        - "3000:3000" # Grafana web UI
+
+volumes:
+  opensearch-data1:
+  opensearch-data2:
+  otel-collector-data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
