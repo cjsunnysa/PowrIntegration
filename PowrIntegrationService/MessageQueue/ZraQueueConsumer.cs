@@ -1,93 +1,52 @@
 ﻿using FluentResults;
-using Microsoft.Extensions.Options;
-using RabbitMQ.Client.Events;
 using System.Text.Json;
-using static PowrIntegrationService.MessageQueue.RabbitMqConsumer;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Errors;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Zra;
 using PowrIntegrationService.Dtos;
+using RabbitMQ.Client;
 
 namespace PowrIntegrationService.MessageQueue;
 
 public sealed class ZraQueueConsumer(
-    IOptions<ApiOptions> apiOptions,
-    RabbitMqFactory factory,
+    IChannel channel,
+    MessageQueueOptions options,
     ZraService zraService,
-    ILogger<ZraQueueConsumer> logger)
+    ILogger<ZraQueueConsumer> logger) : RabbitMqConsumer(channel, options, logger)
 {
-    private readonly ApiOptions _apiOptions = apiOptions.Value;
-    private readonly RabbitMqFactory _factory = factory;
     private readonly ZraService _zraService = zraService;
     private readonly ILogger<ZraQueueConsumer> _logger = logger;
-    private RabbitMqConsumer? _queue;
 
-    public async Task<Result> Start(CancellationToken cancellationToken)
+    protected async override Task<MessageAction> HandleMessage(QueueMessageType messageType, ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
-        try
+        var result = messageType switch
         {
-            _queue = await _factory.CreateConsumer(_apiOptions.QueueHost, _apiOptions.QueueName, HandleMessage, cancellationToken);
+            QueueMessageType.ItemInsert => await HandleItemInsertMessage(body, cancellationToken),
+            QueueMessageType.ItemUpdate => await HandleItemUpdateMessage(body, cancellationToken),
+            _ => Result.Fail($"Unkown message type: {Enum.GetName(messageType)}.")
+        };
 
-            await _queue.Start(cancellationToken);
+        result.LogErrors(_logger);
 
-            return Result.Ok();
-        }
-        catch (Exception ex)
+        if (result.IsFailed && result.HasError<CircuitBreakerError>())
         {
-            return Result.Fail(new ExceptionalError(ex));
-        }
-    }
+            _logger.LogInformation("Pausing queue: {QueueName} processing due to a circuit breaker being open.", Options.Name);
 
-    private async Task<MessageAction> HandleMessage(BasicDeliverEventArgs args, CancellationToken cancellationToken)
-    {
-        try
+            Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
+
+            return MessageAction.Requeue;
+        }
+
+        if (result.IsFailed && result.HasError<HttpRequestTimoutError>())
         {
-            Result<QueueMessageType> messageTypeResult = args.GetQueueMessageType();
-
-            if (messageTypeResult.IsFailed)
-            {
-                messageTypeResult.LogErrors(_logger);
-
-                return MessageAction.Reject;
-            }
-
-            var messageType = messageTypeResult.Value;
-
-            var result = messageType switch
-            {
-                QueueMessageType.ItemInsert => await HandleItemInsertMessage(args.Body, cancellationToken),
-                QueueMessageType.ItemUpdate => await HandleItemUpdateMessage(args.Body, cancellationToken),
-                _ => Result.Fail($"Unkown message type: {Enum.GetName(messageType)}.")
-            };
-
-            result.LogErrors(_logger);
-
-            if (result.IsFailed && result.HasError<CircuitBreakerError>())
-            {
-                _logger.LogInformation("Pausing queue: {QueueName} processing due to a circuit breaker being open.", _apiOptions.QueueName);
-
-                Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
-
-                return MessageAction.Requeue;
-            }
-
-            if (result.IsFailed && result.HasError<HttpRequestTimoutError>())
-            {
-                return MessageAction.Requeue;
-            }
-
-            return
-                result.IsSuccess
-                ? MessageAction.Acknowledge
-                : MessageAction.Reject;
+            return MessageAction.Requeue;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occured processing message: {MessageId} from the queue: {QueueName}.", args.BasicProperties.MessageId, _apiOptions.QueueName);
 
-            return MessageAction.Reject;
-        }
+        return
+            result.IsSuccess
+            ? MessageAction.Acknowledge
+            : MessageAction.Reject;
     }
 
     private async Task<Result> HandleItemInsertMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)

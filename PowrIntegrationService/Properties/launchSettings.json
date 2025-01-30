@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ZraTransformService": {
+    "PowrIntegrationService": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

@@ -128,7 +128,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static SaveItemRequest MapToSaveItemRequest(this PluItemDto plu, ApiOptions apiOptions)
+    public static SaveItemRequest MapToSaveItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
     {
         return new SaveItemRequest
         {
@@ -154,7 +154,7 @@ public static class Mapping
         };
     }
 
-    public static UpdateItemRequest MapToUpdateItemRequest(this PluItemDto plu, ApiOptions apiOptions)
+    public static UpdateItemRequest MapToUpdateItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
     {
         return new UpdateItemRequest
         {

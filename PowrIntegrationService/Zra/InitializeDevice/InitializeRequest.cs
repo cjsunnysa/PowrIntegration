@@ -1,6 +1,4 @@
-﻿using PowrIntegrationService.Zra;
-
-namespace PowrIntegrationService.Zra.InitializeDevice;
+﻿namespace PowrIntegrationService.Zra.InitializeDevice;
 
 public sealed record InitializeRequest : ZraRequest
 {

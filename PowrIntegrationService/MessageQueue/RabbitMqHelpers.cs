@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using PowrIntegrationService.Extensions;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
@@ -37,5 +38,17 @@ public static class RabbitMqHelpers
         var serializedString = Encoding.UTF8.GetString(stream.ToArray());
 
         return Result.Fail($"Invalid message found in the Sync queue. Header 'Type' is not a valid message type. message: {serializedString}");
+    }
+
+    public static string ToLabel(this QueueMessageType messageType)
+    {
+        var typeAsString = Enum.GetName(messageType);
+
+        if (typeAsString is null)
+        {
+            return "unkown";
+        }
+
+        return typeAsString.ToSnakeCase();
     }
 }

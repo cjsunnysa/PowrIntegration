@@ -1,36 +1,24 @@
 ﻿using FluentResults;
-using Microsoft.Extensions.Options;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Options;
+using RabbitMQ.Client;
 
 namespace PowrIntegrationService.MessageQueue;
 
-public sealed class ZraQueuePublisher(
-    IOptions<PowertillOptions> powertillOptions,
-    IOptions<ApiOptions> apiOptions,
-    RabbitMqFactory factory,
-    ILogger<ZraQueuePublisher> logger)
+public sealed class ZraQueuePublisher(IChannel channel, MessageQueueOptions options, ILogger<ZraQueuePublisher> logger) 
+    : RabbitMqPublisher(channel, options, logger)
 {
-    private readonly PowertillOptions _powertillOptions = powertillOptions.Value;
-    private readonly ApiOptions _apiOptions = apiOptions.Value;
-    private readonly RabbitMqFactory _factory = factory;
-    private readonly ILogger<ZraQueuePublisher> _logger = logger;
-
     public async Task<Result> PublishOutboxItem(OutboxItem record, CancellationToken cancellationToken)
     {
         try
         {
-            RabbitMqPublisher queuePublisher = await CreatePublisher(cancellationToken);
-
-            await queuePublisher.Publish(record.MessageType, record.MessageBody, cancellationToken);
+            await Publish(record.MessageType, record.MessageBody, cancellationToken);
 
             return Result.Ok();
         }
         catch (Exception ex)
         {
-            return Result.Fail(new ExceptionalError("An exception occured pushing outbox record to the queue.", ex));
+            return Result.Fail(new ExceptionalError($"An exception occured pushing outbox record Id: {record.Id} to the queue.", ex));
         }
     }
-
-    private async Task<RabbitMqPublisher> CreatePublisher(CancellationToken cancellationToken) => await _factory.CreatePublisher(_apiOptions.QueueHost, _apiOptions.QueueName, cancellationToken);
 }

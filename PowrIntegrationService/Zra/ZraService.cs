@@ -2,10 +2,8 @@
 using Microsoft.Extensions.Options;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
-using PowrIntegration.Errors;
-using PowrIntegration.Zra.InitializeDevice;
-using PowrIntegration.Zra.StandardCodes;
 using PowrIntegrationService.Dtos;
+using PowrIntegrationService.Errors;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra.ClassificationCodes;
@@ -19,10 +17,10 @@ using System.Net.Http.Json;
 
 namespace PowrIntegrationService.Zra;
 
-public class ZraService(HttpClient httpClient, IOptions<ApiOptions> apiOptions, ILogger<ZraService> logger)
+public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOptions, ILogger<ZraService> logger)
 {
     private readonly HttpClient _httpClient = httpClient;
-    private readonly ApiOptions _apiOptions = apiOptions.Value;
+    private readonly ZraApiOptions _apiOptions = apiOptions.Value;
     private readonly ILogger<ZraService> _logger = logger;
 
     public async Task<Result<InitializationResponse>> InitializeDevice(CancellationToken cancellationToken)

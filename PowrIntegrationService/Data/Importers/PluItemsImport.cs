@@ -3,7 +3,6 @@ using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
@@ -12,7 +11,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.Metrics;
 
 namespace PowrIntegrationService.Data.Importers;
-public sealed class PluItemsImport(IOptions<PowertillOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsImport> logger)
+public sealed class PluItemsImport(IOptions<IntegrationServiceOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsImport> logger)
     : FileImporter<PluItem>(options, "PluCreat.csa", logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;

@@ -80,7 +80,7 @@ internal static class Startup
         services.AddSingleton<BufferingHandler>();
 
         services.AddHttpClient<ZraService>((provider, client) =>
-            client.BaseAddress = new Uri(provider.GetRequiredService<IOptions<ApiOptions>>().Value.ApiBaseUrl)
+            client.BaseAddress = new Uri(provider.GetRequiredService<IOptions<ZraApiOptions>>().Value.BaseUrl)
         )
         .AddHttpMessageHandler<BufferingHandler>()
         .AddPolicyHandler(ZraCircuitBreakerPolicy)
@@ -126,9 +126,9 @@ internal static class Startup
 
     public static IServiceCollection ConfigurePowrIntegrationOptions(this IServiceCollection services, ConfigurationManager config)
     {
-        services.Configure<ServicesOptions>(config.GetSection(ServicesOptions.KEY));
-        services.Configure<ApiOptions>(config.GetSection(ApiOptions.KEY));
-        services.Configure<PowertillOptions>(config.GetSection(PowertillOptions.KEY));
+        services.Configure<IntegrationServiceOptions>(config);
+        services.Configure<RabbitMqOptions>(config.GetSection(RabbitMqOptions.KEY));
+        services.Configure<ZraApiOptions>(config.GetSection(ZraApiOptions.KEY));
 
         return services;
     }

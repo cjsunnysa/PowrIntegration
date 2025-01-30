@@ -67,21 +67,6 @@ services:
       - ./root-ca.pem:/etc/certs/opensearch/root-ca.pem
     command: ["--config=/etc/otel-collector-config.yml"]
   
-  powrintegration:
-    image: ${DOCKER_REGISTRY-}powrintegration
-    container_name: powrintegration
-    build:
-      context: ZraTransformService
-      dockerfile: Dockerfile
-    environment:
-      DOTNET_ENVIRONMENT: Development
-      Services__Api__ApiBaseUrl: http://host.docker.internal:8080/sandboxvdsc/
-    depends_on:
-      - otel-collector
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - c:\\PowrIntegration:/usr/local/powrintegration
-
   rabbitmq:
     image: rabbitmq:4.0.5-management
     container_name: rabbitmq
@@ -93,6 +78,30 @@ services:
       - "15672:15672" # Management console
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  powrintegration:
+    image: ${DOCKER_REGISTRY-}powrintegration
+    container_name: powrintegration
+    build:
+      context: PowrIntegrationService
+      dockerfile: Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ZraApi__BaseUrl: http://host.docker.internal:8080/sandboxvdsc/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+      otel-collector:
+        condition: service_started
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - c:\\PowrIntegration:/usr/local/powrintegration
 
   prometheus:
     image: prom/prometheus:latest

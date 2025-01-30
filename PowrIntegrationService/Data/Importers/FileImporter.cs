@@ -6,9 +6,9 @@ using System.Collections.Immutable;
 
 namespace PowrIntegrationService.Data.Importers;
 
-public abstract class FileImporter<T>(IOptions<PowertillOptions> options, string filename, ILogger logger)
+public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> options, string filename, ILogger logger)
 {
-    protected readonly PowertillOptions Options = options.Value;
+    protected readonly IntegrationServiceOptions Options = options.Value;
     protected readonly string ImportDirectory = options.Value.ImportDirectory;
     protected readonly string FileName = filename;
     private readonly ILogger _logger = logger;

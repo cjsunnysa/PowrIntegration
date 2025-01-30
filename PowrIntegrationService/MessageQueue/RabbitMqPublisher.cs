@@ -1,37 +1,58 @@
-﻿using RabbitMQ.Client;
+﻿using PowrIntegrationService.Extensions;
+using PowrIntegrationService.Options;
+using RabbitMQ.Client;
+using System.Diagnostics.Metrics;
 
 namespace PowrIntegrationService.MessageQueue;
 
-public class RabbitMqPublisher
+public abstract class RabbitMqPublisher
 {
+    protected readonly MessageQueueOptions Options;
     private readonly IChannel _channel;
-    private readonly string _queueName;
-    private readonly string _deadLetterExchangeName;
-    private readonly string _deadLetterQueueName;
-    private readonly string _deadLetterRoutingKey;
     private readonly ILogger _logger;
+    private readonly Counter<long> _messagesPublishedCounter;
 
-    public RabbitMqPublisher(IChannel channel, string queueName, ILogger logger)
+    public RabbitMqPublisher(IChannel channel, MessageQueueOptions options, ILogger logger)
     {
+        Options = options;
         _channel = channel;
-        _queueName = queueName;
-        _deadLetterExchangeName = $"{queueName}_dlx";
-        _deadLetterQueueName = $"{queueName}Dead";
-        _deadLetterRoutingKey = $"{queueName.ToLower()}-dead";
         _logger = logger;
+
+        var meter = new Meter(PowrIntegrationValues.MetricsMeterName);
+
+        _messagesPublishedCounter = meter.CreateCounter<long>($"{options.Name.ToSnakeCase()}_messages_published", "messages", "Number of messages published.");
     }
 
-    public async Task Publish(QueueMessageType messageType, byte[] message, CancellationToken cancellationToken)
+    protected async Task Publish(QueueMessageType messageType, byte[] message, CancellationToken cancellationToken)
     {
+        await _channel.ExchangeDeclareAsync(
+                exchange: Options.DeadLetterQueue.ExchangeName,
+                type: ExchangeType.Direct,
+                durable: true,
+                autoDelete: false,
+                cancellationToken: cancellationToken);
+
         await _channel.QueueDeclareAsync(
-            queue: _queueName,
+            queue: Options.DeadLetterQueue.Name,
+            durable: true,
+            exclusive: false,
+            cancellationToken: cancellationToken);
+
+        await _channel.QueueBindAsync(
+            queue: Options.DeadLetterQueue.Name,
+            exchange: Options.DeadLetterQueue.ExchangeName,
+            routingKey: Options.DeadLetterQueue.RoutingKey,
+            cancellationToken: cancellationToken);
+
+        await _channel.QueueDeclareAsync(
+            queue: Options.Name,
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: new Dictionary<string, object?>
             {
-                { "x-dead-letter-exchange", _deadLetterExchangeName },
-                { "x-dead-letter-routing-key", _deadLetterRoutingKey },
+                { "x-dead-letter-exchange", Options.DeadLetterQueue.ExchangeName },
+                { "x-dead-letter-routing-key", Options.DeadLetterQueue.RoutingKey },
                 { "x-max-priority", 2 }
             },
             cancellationToken: cancellationToken);
@@ -47,8 +68,10 @@ public class RabbitMqPublisher
             },
         };
 
-        await _channel.BasicPublishAsync(exchange: "", routingKey: _queueName, mandatory: true, basicProperties: properties, body: message, cancellationToken: cancellationToken);
+        await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: message, cancellationToken: cancellationToken);
 
-        _logger.LogInformation("Message published to queueName: {QueueName}, Id: {MessageId}, MessageType: {MessageType}", _queueName, properties.MessageId, Enum.GetName(messageType));
+        _messagesPublishedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
+
+        _logger.LogInformation("Message published to queueName: {QueueName}, Id: {MessageId}, MessageType: {MessageType}", Options.Name, properties.MessageId, Enum.GetName(messageType));
     }
 }

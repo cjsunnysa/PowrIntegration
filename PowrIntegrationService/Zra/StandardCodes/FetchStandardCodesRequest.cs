@@ -1,6 +1,4 @@
-﻿using PowrIntegrationService.Zra;
-
-namespace PowrIntegrationService.Zra.StandardCodes;
+﻿namespace PowrIntegrationService.Zra.StandardCodes;
 
 public sealed record FetchStandardCodesRequest : ZraRequest
 {

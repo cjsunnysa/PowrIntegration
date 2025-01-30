@@ -2,6 +2,9 @@
   "profiles": {
     "Docker Compose": {
       "commandName": "DockerCompose",
+      "environmentVariables": {
+        "COMPOSE_PROJECT_NAME": "powrintegration-compose"
+      },
       "commandVersion": "1.0",
       "serviceActions": {
         "powrintegration": "StartDebugging"

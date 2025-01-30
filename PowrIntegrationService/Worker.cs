@@ -14,11 +14,9 @@ namespace PowrIntegrationService;
 
 public class Worker : BackgroundService
 {
-    private readonly ServicesOptions _servicesOptions;
+    private readonly IntegrationServiceOptions _serviceOptions;
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory;
-    private readonly PowertillQueuePublisher _powertillQueuePublisher;
-    private readonly PowertillQueueConsumer _powertillQueueConsumer;
-    private readonly ZraQueueConsumer _zraQueueConsumer;
+    private readonly RabbitMqFactory _messageQueueFactory;
     private readonly Outbox _outbox;
     private readonly ZraService _zraService;
     private readonly PluItemsImport _pluItemsImport;
@@ -27,11 +25,9 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
 
     public Worker(
-        IOptions<ServicesOptions> servicesOptions,
+        IOptions<IntegrationServiceOptions> serviceOptions,
         IDbContextFactory<PowrIntegrationDbContext> dbContextFactory,
-        PowertillQueuePublisher powertillQueuePublisher,
-        PowertillQueueConsumer powertillQueueConsumer,
-        ZraQueueConsumer zraQueueConsumer,
+        RabbitMqFactory messageQueueFactory,
         Outbox outbox,
         ZraService zraService,
         PluItemsImport pluItemsImport,
@@ -39,14 +35,12 @@ public class Worker : BackgroundService
         IngredientsImport ingredientsImport,
         ILogger<Worker> logger)
     {
-        _servicesOptions = servicesOptions.Value;
+        _serviceOptions = serviceOptions.Value;
         _pluItemsImport = pluItemsImport;
         _classificationImport = classificationImport;
         _ingredientsImport = ingredientsImport;
         _dbContextFactory = dbContextFactory;
-        _powertillQueuePublisher = powertillQueuePublisher;
-        _powertillQueueConsumer = powertillQueueConsumer;
-        _zraQueueConsumer = zraQueueConsumer;
+        _messageQueueFactory = messageQueueFactory;
         _outbox = outbox;
         _zraService = zraService;
         _logger = logger;
@@ -54,9 +48,7 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await _classificationImport.Execute(cancellationToken);
-        await _pluItemsImport.Execute(cancellationToken);
-        await _ingredientsImport.Execute(cancellationToken);
+        var powertillQueuePublisher = await _messageQueueFactory.CreatePublisher<BackOfficeQueuePublisher>(cancellationToken);
 
         var fetchStandardCodesResult = await _zraService.FetchStandardCodes(cancellationToken);
 
@@ -66,7 +58,7 @@ public class Worker : BackgroundService
         {
             ImmutableArray<StandardCodeClassDto> standardCodeClasses = fetchStandardCodesResult.Value;
 
-            var publishResult = await _powertillQueuePublisher.PublishStandardCodes(standardCodeClasses, cancellationToken);
+            var publishResult = await powertillQueuePublisher.PublishStandardCodes(standardCodeClasses, cancellationToken);
 
             publishResult.LogErrors(_logger);
         }
@@ -79,7 +71,7 @@ public class Worker : BackgroundService
         {
             ImmutableArray<ClassificationCodeDto> classificationCodes = fetchClassificationCodesResult.Value;
 
-            var publishResult = await _powertillQueuePublisher.PublishClassificationCodes(classificationCodes, cancellationToken);
+            var publishResult = await powertillQueuePublisher.PublishClassificationCodes(classificationCodes, cancellationToken);
 
             publishResult.LogErrors(_logger);
         }
@@ -92,20 +84,20 @@ public class Worker : BackgroundService
         {
             ImmutableArray<ImportItemDto> importItems = fetchImports.Value;
 
-            var publishResult = await _powertillQueuePublisher.PublishZraImportItems(importItems, cancellationToken);
+            var publishResult = await powertillQueuePublisher.PublishZraImportItems(importItems, cancellationToken);
 
             publishResult.LogErrors(_logger);
         }
 
-        var zraConsumerStartResult = await _zraQueueConsumer.Start(cancellationToken);
+        var zraQueueConsumer = await _messageQueueFactory.CreateConsumer<ZraQueueConsumer>(cancellationToken);
 
-        zraConsumerStartResult.LogErrors(_logger);
+        await zraQueueConsumer.Start(cancellationToken);
 
-        var powertillConsumerStartResult = await _powertillQueueConsumer.Start(cancellationToken);
+        var powertillQueueConsumer = await _messageQueueFactory.CreateConsumer<BackOfficeQueueConsumer>(cancellationToken);
+        
+        await powertillQueueConsumer.Start(cancellationToken);
 
-        powertillConsumerStartResult.LogErrors(_logger);
-
-        int serviceTimeoutMilliseconds = Convert.ToInt32(TimeSpan.FromSeconds(_servicesOptions.ServiceTimeoutSeconds).TotalMilliseconds);
+        int serviceTimeoutMilliseconds = Convert.ToInt32(TimeSpan.FromSeconds(_serviceOptions.ServiceTimeoutSeconds).TotalMilliseconds);
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -116,6 +108,9 @@ public class Worker : BackgroundService
                     _logger.LogInformation("PowrIntegration worker running at: {time}", DateTimeOffset.Now);
                 }
 
+                await _classificationImport.Execute(cancellationToken);
+                await _pluItemsImport.Execute(cancellationToken);
+                await _ingredientsImport.Execute(cancellationToken);
                 await _outbox.SendItemsToApiQueue(cancellationToken);
 
                 await Task.Delay(serviceTimeoutMilliseconds, cancellationToken);

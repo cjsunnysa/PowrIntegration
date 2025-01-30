@@ -1,6 +1,4 @@
-﻿using PowrIntegrationService.Zra;
-
-namespace PowrIntegrationService.Zra.GetImports;
+﻿namespace PowrIntegrationService.Zra.GetImports;
 
 public sealed record GetImportsRequest : ZraRequest
 {

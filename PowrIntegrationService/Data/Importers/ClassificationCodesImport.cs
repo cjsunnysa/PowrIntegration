@@ -2,18 +2,16 @@
 using System.Collections.Immutable;
 using FluentResults;
 using Microsoft.Extensions.Options;
-using PowrIntegration.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using EFCore.BulkExtensions;
 using System.Diagnostics.Metrics;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Data;
 using PowrIntegrationService.Options;
 
 namespace PowrIntegrationService.Data.Importers;
 
 public sealed class ClassificationCodesImport(
-    IOptions<PowertillOptions> options,
+    IOptions<IntegrationServiceOptions> options,
     ILogger<ClassificationCodesImport> logger,
     IDbContextFactory<PowrIntegrationDbContext> dbContextFactory)
     : FileImporter<ZraClassificationCode>(options, "UNSPSC-Classification-Codes.csv", logger)

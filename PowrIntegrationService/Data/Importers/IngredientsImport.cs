@@ -3,17 +3,16 @@ using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PowrIntegration.Extensions;
-using PowrIntegration.Powertill;
-using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
+using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
+using PowrIntegrationService.Powertill;
 using System.Collections.Immutable;
 using System.Diagnostics.Metrics;
 
 namespace PowrIntegrationService.Data.Importers;
 
-public sealed class IngredientsImport(IOptions<PowertillOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<IngredientsImport> logger)
+public sealed class IngredientsImport(IOptions<IntegrationServiceOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<IngredientsImport> logger)
     : FileImporter<Recipe>(options, "IngCreat.csa", logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;

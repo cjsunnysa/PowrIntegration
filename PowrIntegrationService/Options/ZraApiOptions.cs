@@ -1,22 +1,20 @@
 ﻿namespace PowrIntegrationService.Options;
 
-public sealed record ApiOptions
+public sealed record ZraApiOptions
 {
-    public const string KEY = "Services:Api";
+    public const string KEY = "ZraApi";
 
-    public required string QueueName { get; init; }
-    public required string QueueHost { get; init; }
-    public required string ApiBaseUrl { get; init; }
+    public required string BaseUrl { get; init; }
     public required string TaxpayerIdentificationNumber { get; init; }
     public required string TaxpayerBranchIdentifier { get; init; }
     public required string DeviceSerialNumber { get; init; }
     public required bool ShouldInitializeDevice { get; init; }
     public required string RegisterDeviceFileName { get; init; }
-    public TaxTypeMapping[] TaxTypeMappings { get; set; } = [];
+    public required TaxTypeMapping[] TaxTypeMappings { get; init; }
 }
 
 public sealed record TaxTypeMapping
 {
-    public int SalesGroupId { get; set; }
-    public string TaxTypeCode { get; set; } = string.Empty;
+    public required int SalesGroupId { get; init; }
+    public required string TaxTypeCode { get; init; }
 }
