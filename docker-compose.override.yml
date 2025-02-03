@@ -1,71 +1,59 @@
 services:
-  opensearch-node1:
-    image: opensearchproject/opensearch:latest
-    container_name: opensearch-node1
-    environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node1
-      - discovery.seed_hosts=opensearch-node1,opensearch-node2
-      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
-      - bootstrap.memory_lock=true  # along with the memlock settings below, disables swapping
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=a2sdfkl!nvnas4kDasdfjjl    # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and higher
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536  # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
-        hard: 65536
-    volumes:
-      - opensearch-data1:/usr/share/opensearch/data
-    ports:
-      - 9200:9200
-      - 9600:9600  # required for Performance Analyzer
-  opensearch-node2:
-    image: opensearchproject/opensearch:latest
-    container_name: opensearch-node2
-    environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node2
-      - discovery.seed_hosts=opensearch-node1,opensearch-node2
-      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
-      - bootstrap.memory_lock=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=a2sdfkl!nvnas4kDasdfjjl
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - opensearch-data2:/usr/share/opensearch/data
-  
-  opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:latest
-    container_name: opensearch-dashboards
-    ports:
-      - 5601:5601
-    expose:
-      - '5601'
-    environment:
-      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
-
   otel-collector:
-    privileged: true
-    image: otel/opentelemetry-collector-contrib:0.117.0
+    image: otel/opentelemetry-collector:latest
     container_name: otel-collector
-    ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - "9464:9464"   # Prometheus metrics
+    command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - otel-collector-data:/usr/share/otel-collector/data
-      - ./collector-config.yml:/etc/otel-collector-config.yml
-      - ./root-ca.pem:/etc/certs/opensearch/root-ca.pem
-    command: ["--config=/etc/otel-collector-config.yml"]
+      - ./container-files/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"  # OTLP gRPC
+      - "4318:4318"  # OTLP HTTP
+    depends_on:
+      - jaeger
+      - prometheus
+      - loki
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    volumes:
+      - ./container-files/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    volumes:
+      - ./container-files/loki-config.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.65.0
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector
+      - "14250:14250"  # OTLP gRPC
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
   
   rabbitmq:
     image: rabbitmq:4.0.5-management
@@ -103,32 +91,5 @@ services:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - c:\\PowrIntegration:/usr/local/powrintegration
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-        - prometheus_data:/prometheus
-        - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-        - "9090:9090" # Prometheus web UI
-    command:
-        - "--config.file=/etc/prometheus/prometheus.yml"
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    environment:
-        - GF_SECURITY_ADMIN_USER=admin # Grafana admin username
-        - GF_SECURITY_ADMIN_PASSWORD=admin # Grafana admin password
-    volumes:
-        - grafana_data:/var/lib/grafana
-    ports:
-        - "3000:3000" # Grafana web UI
-
 volumes:
-  opensearch-data1:
-  opensearch-data2:
-  otel-collector-data:
   rabbitmq_data:
-  prometheus_data:
-  grafana_data:
