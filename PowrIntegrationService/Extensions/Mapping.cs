@@ -16,7 +16,7 @@ using static PowrIntegrationService.Zra.StandardCodes.FetchStandardCodesResponse
 namespace PowrIntegrationService.Extensions;
 public static class Mapping
 {
-    public static ImmutableArray<StandardCodeClassDto> MapToDtos(this ImmutableArray<CodeClass> classes)
+    public static ImmutableArray<StandardCodeClassDto> ToDtos(this ImmutableArray<CodeClass> classes)
     {
         return classes
             .Select(x => new StandardCodeClassDto
@@ -35,7 +35,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<ZraStandardCodeClass> MapToEntities(this ImmutableArray<StandardCodeClassDto> dtos)
+    public static ImmutableArray<ZraStandardCodeClass> ToEntities(this ImmutableArray<StandardCodeClassDto> dtos)
     {
         return dtos
             .Select(x => new ZraStandardCodeClass
@@ -55,7 +55,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<ClassificationCodeDto> MapToDtos(this ImmutableArray<FetchClassificationCodesResponse.Code> codes)
+    public static ImmutableArray<ClassificationCodeDto> ToDtos(this ImmutableArray<FetchClassificationCodesResponse.Code> codes)
     {
         return codes
             .Select(x => new ClassificationCodeDto
@@ -70,7 +70,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<ImportItemDto> MapToDtos(this ImmutableArray<GetImportsResponse.ImportItem> items)
+    public static ImmutableArray<ImportItemDto> ToDtos(this ImmutableArray<GetImportsResponse.ImportItem> items)
     {
         return items
             .Select(x => new ImportItemDto
@@ -99,7 +99,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<ZraImportItem> MapToEntities(this ImmutableArray<ImportItemDto> items)
+    public static ImmutableArray<ZraImportItem> ToEntities(this ImmutableArray<ImportItemDto> items)
     {
         return items
             .Select(x => new ZraImportItem
@@ -128,7 +128,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static SaveItemRequest MapToSaveItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
+    public static SaveItemRequest ToSaveItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
     {
         return new SaveItemRequest
         {
@@ -154,7 +154,7 @@ public static class Mapping
         };
     }
 
-    public static UpdateItemRequest MapToUpdateItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
+    public static UpdateItemRequest ToUpdateItemRequest(this PluItemDto plu, ZraApiOptions apiOptions)
     {
         return new UpdateItemRequest
         {
@@ -187,180 +187,5 @@ public static class Mapping
                 .FirstOrDefault(x => x.SalesGroupId == salesGroup)
                 ?.TaxTypeCode
                 ?? SaveItemRequest.TaxTypeCode.StandardRated;
-    }
-
-    public static ImmutableArray<OutboxItem> MapToOutboxItems(this ImmutableArray<PluItem> records)
-    {
-        return
-            records
-                .Select(x => new OutboxItem
-                {
-                    MessageType = QueueMessageType.ItemInsert,
-                    MessageBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(x))
-                })
-                .ToImmutableArray();
-    }
-
-    public static PluItem MapToEntity(this PluItemDto dto)
-    {
-        return new PluItem
-        {
-            PluNumber = dto.PluNumber,
-            PluDescription = dto.PluDescription,
-            SizeDescription = dto.SizeDescription,
-            SellingPrice1 = dto.SellingPrice1,
-            SellingPrice2 = dto.SellingPrice2,
-            SellingPrice3 = dto.SellingPrice3,
-            SellingPrice4 = dto.SellingPrice4,
-            SellingPrice5 = dto.SellingPrice5,
-            SellingPrice6 = dto.SellingPrice6,
-            SellingPrice7 = dto.SellingPrice7,
-            SellingPrice8 = dto.SellingPrice8,
-            SellingPrice9 = dto.SellingPrice9,
-            GrossCost = dto.GrossCost,
-            NettCost = dto.NettCost,
-            TargetMargin1 = dto.TargetMargin1,
-            TargetMargin2 = dto.TargetMargin2,
-            TargetMargin3 = dto.TargetMargin3,
-            TargetMargin4 = dto.TargetMargin4,
-            TargetMargin5 = dto.TargetMargin5,
-            TargetMargin6 = dto.TargetMargin6,
-            TargetMargin7 = dto.TargetMargin7,
-            TargetMargin8 = dto.TargetMargin8,
-            TargetMargin9 = dto.TargetMargin9,
-            SalesGroup = dto.SalesGroup,
-            AccessLevel = dto.AccessLevel,
-            Flags = dto.Flags,
-            MixAndMatchGroup = dto.MixAndMatchGroup,
-            DiscountMatrixGroup = dto.DiscountMatrixGroup,
-            KpFlags = dto.KpFlags,
-            KpPriorityLevel = dto.KpPriorityLevel,
-            KitchenPrinterGroup = dto.KitchenPrinterGroup,
-            PieceCount = dto.PieceCount,
-            SoftKeyboard1 = dto.SoftKeyboard1,
-            SoftKeyboard2 = dto.SoftKeyboard2,
-            SoftKeyboard3 = dto.SoftKeyboard3,
-            SoftKeyboard4 = dto.SoftKeyboard4,
-            SoftKeyboard5 = dto.SoftKeyboard5,
-            SoftKeyboard6 = dto.SoftKeyboard6,
-            SoftKeyboard7 = dto.SoftKeyboard7,
-            SoftKeyboard8 = dto.SoftKeyboard8,
-            SoftKeyboard9 = dto.SoftKeyboard9,
-            SoftKeyboard10 = dto.SoftKeyboard10,
-            BillPrintGroup = dto.BillPrintGroup,
-            LinkedPlu = dto.LinkedPlu,
-            LoyaltyPoints = dto.LoyaltyPoints,
-            ExpiryPeriod = dto.ExpiryPeriod,
-            DealGroup = dto.DealGroup,
-            InternalPluFlags = dto.InternalPluFlags,
-            LoyaltyPointsPrice1 = dto.LoyaltyPointsPrice1,
-            LoyaltyPointsPrice2 = dto.LoyaltyPointsPrice2,
-            LoyaltyPointsPrice3 = dto.LoyaltyPointsPrice3,
-            LoyaltyPointsPrice4 = dto.LoyaltyPointsPrice4,
-            LoyaltyPointsPrice5 = dto.LoyaltyPointsPrice5,
-            LoyaltyPointsPrice6 = dto.LoyaltyPointsPrice6,
-            LoyaltyPointsPrice7 = dto.LoyaltyPointsPrice7,
-            LoyaltyPointsPrice8 = dto.LoyaltyPointsPrice8,
-            LoyaltyPointsPrice9 = dto.LoyaltyPointsPrice9,
-            CouponNumber = dto.CouponNumber,
-            DealMaximumPrice = dto.DealMaximumPrice,
-            DealPremiumPrice = dto.DealPremiumPrice,
-            ToppingKeyboardNo = dto.ToppingKeyboardNo,
-            ToppingGroupNo = dto.ToppingGroupNo,
-            LastPurchaseDate = dto.LastPurchaseDate,
-            FreeToppingsQty = dto.FreeToppingsQty,
-            CateringItemType = dto.CateringItemType,
-            CateringSize = dto.CateringSize,
-            ClassificationGroup1 = dto.ClassificationGroup1,
-            ClassificationGroup2 = dto.ClassificationGroup2,
-            ClassificationGroup3 = dto.ClassificationGroup3,
-            ClassificationGroup4 = dto.ClassificationGroup4,
-            ClassificationGroup5 = dto.ClassificationGroup5,
-            ClassificationGroup6 = dto.ClassificationGroup6,
-            ClassificationGroup7 = dto.ClassificationGroup7,
-            ClassificationGroup8 = dto.ClassificationGroup8,
-            ClassificationGroup9 = dto.ClassificationGroup9,
-            RedemptionPoints = dto.RedemptionPoints,
-            VariantGroup = dto.VariantGroup,
-            ToppingPremiumPrice = dto.ToppingPremiumPrice,
-            UseByPeriod = dto.UseByPeriod,
-            CostMaxVariancePercent = dto.CostMaxVariancePercent,
-            ContainerContentSize = dto.ContainerContentSize,
-            ReferredPluNo = dto.ReferredPluNo,
-            ReferredQuantity = dto.ReferredQuantity,
-            ReOrderLevel = dto.ReOrderLevel,
-            ReOrderQuantity = dto.ReOrderQuantity,
-            BinLocationNo = dto.BinLocationNo,
-            StocktakingGroup = dto.StocktakingGroup,
-            Supplier1AccountNo = dto.Supplier1AccountNo,
-            Supplier2AccountNo = dto.Supplier2AccountNo,
-            Supplier3AccountNo = dto.Supplier3AccountNo,
-            Supplier1StockCode = dto.Supplier1StockCode,
-            Supplier2StockCode = dto.Supplier2StockCode,
-            Supplier3StockCode = dto.Supplier3StockCode,
-            BottleEmptyWeight = dto.BottleEmptyWeight,
-            BottleFullWeight = dto.BottleFullWeight,
-            BottleTotCount = dto.BottleTotCount,
-            Supplier1LeadTime = dto.Supplier1LeadTime,
-            Supplier2LeadTime = dto.Supplier2LeadTime,
-            Supplier3LeadTime = dto.Supplier3LeadTime,
-            QuotedPriceSupplier1 = dto.QuotedPriceSupplier1,
-            QuotedPriceSupplier2 = dto.QuotedPriceSupplier2,
-            QuotedPriceSupplier3 = dto.QuotedPriceSupplier3,
-            DateQuotedSupplier1 = dto.DateQuotedSupplier1,
-            DateQuotedSupplier2 = dto.DateQuotedSupplier2,
-            DateQuotedSupplier3 = dto.DateQuotedSupplier3,
-            CheckPriceSupplierFlags = dto.CheckPriceSupplierFlags,
-            StockPurchaseGroup = dto.StockPurchaseGroup,
-            PurchasePriceVariancePercent = dto.PurchasePriceVariancePercent,
-            WebItemDescription = dto.WebItemDescription,
-            BoxQuantity = dto.BoxQuantity,
-            PalletQuantity = dto.PalletQuantity,
-            DateTimeCreated = dto.DateTimeCreated,
-            DateTimeEdited = dto.DateTimeEdited,
-            ClerkEdited = dto.ClerkEdited,
-            Version = dto.Version,
-        };
-    }
-
-    public static ImmutableArray<Recipe> MapToRecipes(this IEnumerable<IGrouping<long, IngredientDto>> groups)
-    {
-        return groups
-            .Select(x =>
-                x.First(y => y.IsHeader)
-                .ToRecipe())
-            .ToImmutableArray();
-    }
-
-    public static Recipe ToRecipe(this IngredientDto dto)
-    {
-        return new Recipe
-        {
-            PluNumber = dto.PluNumber,
-            Portions = dto.IngredientQuantity ?? 0m
-        };
-    }
-
-    public static ImmutableArray<Ingredient> MapToIngredients(this IEnumerable<IGrouping<long, IngredientDto>> groups)
-    {
-        return groups
-            .SelectMany(x =>
-                x.Where(y => !y.IsHeader).ToIngredient(x.First(y => y.IsHeader)))
-            .ToImmutableArray();
-    }
-
-    public static ImmutableArray<Ingredient> ToIngredient(this IEnumerable<IngredientDto> dtos, IngredientDto header)
-    {
-        return dtos
-            .Select(x => new Ingredient
-            {
-                PluNumber = header.PluNumber,
-                IngredientNumber = x.IngredientNumber,
-                IngredientQuantity = x.IngredientQuantity,
-                RecipeGrossCost = x.RecipeGrossCost,
-                RecipeNettCost = x.RecipeNettCost,
-                UnitStockRatio = x.UnitStockRatio
-            })
-            .ToImmutableArray();
     }
 }

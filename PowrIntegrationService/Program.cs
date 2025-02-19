@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using PowrIntegrationService;
-using PowrIntegrationService.Data.Exporters;
 using PowrIntegrationService.Data.Importers;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.MessageQueue;
@@ -16,9 +15,7 @@ builder.Services.ConfigureHttpClients();
 builder.Services.ConfigureEntityFramework(databaseConnectionString);
 builder.Services.ConfigurePowrIntegrationOptions(builder.Configuration);
 builder.Services.AddSingleton<RabbitMqFactory>();
-builder.Services.AddSingleton<Outbox>();
 builder.Services.AddSingleton<PluItemsImport>();
-builder.Services.AddSingleton<IngredientsImport>();
 builder.Services.AddSingleton<ClassificationCodesImport>();
 builder.Services.AddHostedService<Worker>();
 

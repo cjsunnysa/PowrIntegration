@@ -30,8 +30,6 @@ public sealed class BackOfficeQueueConsumer(
             QueueMessageType.ZraStandardCodes => await HandleStandardCodeMessage(messageBody, cancellationToken),
             QueueMessageType.ZraClassificationCodes => await HandleClassificationCodeMessage(messageBody, cancellationToken),
             QueueMessageType.ZraImportItems => await HandleZraImportItemsMessage(messageBody, cancellationToken),
-            QueueMessageType.ItemInsert or QueueMessageType.ItemUpdate => await HandleItemMessage(messageBody, cancellationToken),
-            QueueMessageType.IngredientInsert or QueueMessageType.IngredientUpdate => await HandleIngredientMessage(messageBody, cancellationToken),
             _ => Result.Fail($"Unkown message type: {(int)messageType}.")
         };
 
@@ -49,7 +47,7 @@ public sealed class BackOfficeQueueConsumer(
 
         var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<StandardCodeClassDto>>(stream, cancellationToken: cancellationToken);
 
-        var entities = dtos.MapToEntities();
+        var entities = dtos.ToEntities();
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -196,95 +194,17 @@ public sealed class BackOfficeQueueConsumer(
         }
     }
 
-    private async Task<Result> HandleItemMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
-    {
-        using var stream = new MemoryStream(body.ToArray());
-
-        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(stream, cancellationToken: cancellationToken);
-
-        if (dto is null)
-        {
-            return Result.Fail("Message does not contain a valid PLU item record.");
-        }
-
-        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-
-        var existingPlu = await dbContext.PluItems.FindAsync([dto.PluNumber], cancellationToken);
-
-        if (existingPlu is null)
-        {
-            var entity = dto.MapToEntity();
-
-            await dbContext.PluItems.AddAsync(entity, cancellationToken);
-
-        }
-        else
-        {
-            existingPlu.UpdateFrom(dto);
-        }
-
-        var outboxRecord = new OutboxItem
-        {
-            MessageType = existingPlu is null ? QueueMessageType.ItemInsert : QueueMessageType.ItemUpdate,
-            MessageBody = body.ToArray()
-        };
-
-        await dbContext.OutboxItems.AddAsync(outboxRecord, cancellationToken);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return Result.Ok();
-    }
-
     private async Task<Result> HandleZraImportItemsMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
         using var stream = new MemoryStream(body.ToArray());
 
         var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<ImportItemDto>>(stream, cancellationToken: cancellationToken);
 
-        var zraImportItems = dtos.MapToEntities();
+        var zraImportItems = dtos.ToEntities();
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         await dbContext.BulkInsertOrUpdateAsync(zraImportItems, cancellationToken: cancellationToken);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return Result.Ok();
-    }
-
-    private async Task<Result> HandleIngredientMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
-    {
-        using var stream = new MemoryStream(body.ToArray());
-
-        var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<IngredientDto>>(stream, cancellationToken: cancellationToken);
-
-        var header = dtos.FirstOrDefault(x => x.IsHeader);
-
-        if (header is null)
-        {
-            return Result.Fail("Ingredient records are missing a header.");
-        }
-
-        var recipe = header.ToRecipe();
-
-        var ingredients = dtos.Where(x => !x.IsHeader).ToIngredient(header);
-
-        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken: cancellationToken);
-
-        var existingRecipe = await dbContext.Recipes.FindAsync([recipe.PluNumber], cancellationToken: cancellationToken);
-
-        if (existingRecipe is null)
-        {
-            recipe.Ingredients = [.. ingredients];
-
-            dbContext.Recipes.Add(recipe);
-        }
-        else
-        {
-            existingRecipe.Portions = recipe.Portions;
-            existingRecipe.Ingredients = [.. ingredients];
-        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

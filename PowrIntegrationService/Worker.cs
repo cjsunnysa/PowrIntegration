@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.Options;
 using PowrIntegrationService.Data;
-using PowrIntegrationService.Data.Exporters;
 using PowrIntegrationService.Data.Importers;
 using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Extensions;
@@ -17,31 +17,25 @@ public class Worker : BackgroundService
     private readonly IntegrationServiceOptions _serviceOptions;
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory;
     private readonly RabbitMqFactory _messageQueueFactory;
-    private readonly Outbox _outbox;
     private readonly ZraService _zraService;
     private readonly PluItemsImport _pluItemsImport;
     private readonly ClassificationCodesImport _classificationImport;
-    private readonly IngredientsImport _ingredientsImport;
     private readonly ILogger<Worker> _logger;
 
     public Worker(
         IOptions<IntegrationServiceOptions> serviceOptions,
         IDbContextFactory<PowrIntegrationDbContext> dbContextFactory,
         RabbitMqFactory messageQueueFactory,
-        Outbox outbox,
         ZraService zraService,
         PluItemsImport pluItemsImport,
         ClassificationCodesImport classificationImport,
-        IngredientsImport ingredientsImport,
         ILogger<Worker> logger)
     {
         _serviceOptions = serviceOptions.Value;
         _pluItemsImport = pluItemsImport;
         _classificationImport = classificationImport;
-        _ingredientsImport = ingredientsImport;
         _dbContextFactory = dbContextFactory;
         _messageQueueFactory = messageQueueFactory;
-        _outbox = outbox;
         _zraService = zraService;
         _logger = logger;
     }
@@ -89,6 +83,9 @@ public class Worker : BackgroundService
             publishResult.LogErrors(_logger);
         }
 
+        await _classificationImport.Execute(cancellationToken);
+        await _pluItemsImport.Execute(cancellationToken);
+
         var zraQueueConsumer = await _messageQueueFactory.CreateConsumer<ZraQueueConsumer>(cancellationToken);
 
         await zraQueueConsumer.Start(cancellationToken);
@@ -107,11 +104,6 @@ public class Worker : BackgroundService
                 {
                     _logger.LogInformation("PowrIntegration worker running at: {time}", DateTimeOffset.Now);
                 }
-
-                await _classificationImport.Execute(cancellationToken);
-                await _pluItemsImport.Execute(cancellationToken);
-                await _ingredientsImport.Execute(cancellationToken);
-                await _outbox.SendItemsToApiQueue(cancellationToken);
 
                 await Task.Delay(serviceTimeoutMilliseconds, cancellationToken);
             }

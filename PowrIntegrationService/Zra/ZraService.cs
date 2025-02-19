@@ -96,7 +96,7 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
                 return Result.Fail(new Error($"Unexepected response content from ZRA API Fetch Standard Codes request. ResponseBody: {body}"));
             }
 
-            var standardCodeClasses = response.clsList.MapToDtos();
+            var standardCodeClasses = response.clsList.ToDtos();
 
             return Result.Ok(standardCodeClasses);
         }
@@ -142,7 +142,7 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
                 return Result.Fail(new Error($"Unexepected response content from ZRA API Fetch Classification Codes request. ResponseBody: {body}"));
             }
 
-            var dtos = response.itemClsList.MapToDtos();
+            var dtos = response.itemClsList.ToDtos();
 
             return
                 response.resultCd == ZraResponseCode.SUCCESS || response.resultCd == ZraResponseCode.NO_SEARCH_RESULT
@@ -169,7 +169,7 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
         {
             _logger.LogInformation("Sending Save Item request to the ZRA API.");
 
-            var request = dto.MapToSaveItemRequest(_apiOptions);
+            var request = dto.ToSaveItemRequest(_apiOptions);
 
             var httpResponse = await _httpClient.PostAsJsonAsync("items/saveItem", request, cancellationToken);
 
@@ -212,7 +212,7 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
         {
             _logger.LogInformation("Sending Update Item request to the ZRA API.");
 
-            var request = dto.MapToUpdateItemRequest(_apiOptions);
+            var request = dto.ToUpdateItemRequest(_apiOptions);
 
             var httpResponse = await _httpClient.PostAsJsonAsync("items/updateItem", request, cancellationToken);
 
@@ -277,7 +277,7 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
                 return Result.Fail(new Error($"Unexepected response content from ZRA API Get Imports request. ResponseBody: {body}"));
             }
 
-            var dtos = response.data?.MapToDtos() ?? [];
+            var dtos = response.data?.ToDtos() ?? [];
 
             return
                 response.resultCd == ZraResponseCode.SUCCESS || response.resultCd == ZraResponseCode.NO_SEARCH_RESULT

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PowrIntegrationService.Data;
 
@@ -10,9 +11,11 @@ using PowrIntegrationService.Data;
 namespace PowrIntegrationService.Data.Migrations
 {
     [DbContext(typeof(PowrIntegrationDbContext))]
-    partial class PowrIntegrationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250219072625_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");

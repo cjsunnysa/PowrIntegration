@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Immutable;
+
 namespace PowrIntegrationService.Options;
 
 public sealed record RabbitMqOptions

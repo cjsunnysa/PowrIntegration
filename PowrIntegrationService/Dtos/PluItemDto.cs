@@ -6,27 +6,7 @@ public sealed record PluItemDto
     public string? PluDescription { get; set; }
     public string? SizeDescription { get; set; }
     public decimal SellingPrice1 { get; set; }
-    public decimal SellingPrice2 { get; set; }
-    public decimal SellingPrice3 { get; set; }
-    public decimal SellingPrice4 { get; set; }
-    public decimal SellingPrice5 { get; set; }
-    public decimal SellingPrice6 { get; set; }
-    public decimal SellingPrice7 { get; set; }
-    public decimal SellingPrice8 { get; set; }
-    public decimal SellingPrice9 { get; set; }
-    public decimal GrossCost { get; set; }
-    public decimal NettCost { get; set; }
-    public decimal TargetMargin1 { get; set; }
-    public decimal TargetMargin2 { get; set; }
-    public decimal TargetMargin3 { get; set; }
-    public decimal TargetMargin4 { get; set; }
-    public decimal TargetMargin5 { get; set; }
-    public decimal TargetMargin6 { get; set; }
-    public decimal TargetMargin7 { get; set; }
-    public decimal TargetMargin8 { get; set; }
-    public decimal TargetMargin9 { get; set; }
     public int SalesGroup { get; set; }
-    public int AccessLevel { get; set; }
     public string Flags { get; set; } = string.Empty;
     public bool IsFlag48 => Flags.Length > 0 && Flags[0] == 'Y';
     public bool IsFlag47 => Flags.Length > 1 && Flags[1] == 'Y';
@@ -76,126 +56,7 @@ public sealed record PluItemDto
     public bool IsPreparationPlu => Flags.Length > 45 && Flags[45] == 'Y';
     public bool IsCuttingSchedulePlu => Flags.Length > 46 && Flags[46] == 'Y';
     public bool IsPromptForPrice => Flags.Length > 47 && Flags[47] == 'Y';
-    public int MixAndMatchGroup { get; set; }
-    public int DiscountMatrixGroup { get; set; }
-    public string KpFlags { get; set; } = "..............";
-    public bool IsKp1Item => KpFlags.Length > 0 && KpFlags[0] == '1';
-    public bool IsKp2Item => KpFlags.Length > 1 && KpFlags[1] == '2';
-    public bool IsKp3Item => KpFlags.Length > 2 && KpFlags[2] == '3';
-    public bool IsKp4Item => KpFlags.Length > 3 && KpFlags[3] == '4';
-    public bool IsKp5Item => KpFlags.Length > 4 && KpFlags[4] == '5';
-    public bool IsKp6Item => KpFlags.Length > 5 && KpFlags[5] == '6';
-    public bool IsKp7Item => KpFlags.Length > 6 && KpFlags[6] == '7';
-    public bool IsKp8Item => KpFlags.Length > 7 && KpFlags[7] == '8';
-    public bool IsKp9Item => KpFlags.Length > 8 && KpFlags[8] == '9';
-    public bool IsKp10Item => KpFlags.Length > 9 && KpFlags[9] == 'A';
-    public bool IsKp11Item => KpFlags.Length > 10 && KpFlags[10] == 'B';
-    public bool IsKp12Item => KpFlags.Length > 11 && KpFlags[11] == 'C';
-    public bool IsKp13Item => KpFlags.Length > 12 && KpFlags[12] == 'D';
-    public bool IsKp14Item => KpFlags.Length > 13 && KpFlags[13] == 'E';
-    public int? KpPriorityLevel { get; set; }
-    public int KitchenPrinterGroup { get; set; }
-    public int PieceCount { get; set; }
-    public int? SoftKeyboard1 { get; set; }
-    public int? SoftKeyboard2 { get; set; }
-    public int? SoftKeyboard3 { get; set; }
-    public int? SoftKeyboard4 { get; set; }
-    public int? SoftKeyboard5 { get; set; }
-    public int? SoftKeyboard6 { get; set; }
-    public int? SoftKeyboard7 { get; set; }
-    public int? SoftKeyboard8 { get; set; }
-    public int? SoftKeyboard9 { get; set; }
-    public int? SoftKeyboard10 { get; set; }
-    public int BillPrintGroup { get; set; }
-    public string? LinkedPlu { get; set; }
-    public int? LoyaltyPoints { get; set; }
-    public int ExpiryPeriod { get; set; }
-    public int? DealGroup { get; set; }
-    public string InternalPluFlags { get; set; } = "0000000000000000";
-    public bool IsInternalPluFlag1 => InternalPluFlags.Length > 0 && InternalPluFlags[0] == '1';
-    public bool IsInternalPluFlag2 => InternalPluFlags.Length > 1 && InternalPluFlags[1] == '1';
-    public bool IsInternalPluFlag3 => InternalPluFlags.Length > 2 && InternalPluFlags[2] == '1';
-    public bool IsInternalPluFlag4 => InternalPluFlags.Length > 3 && InternalPluFlags[3] == '1';
-    public bool IsInternalPluFlag5 => InternalPluFlags.Length > 4 && InternalPluFlags[4] == '1';
-    public bool IsInternalPluFlag6 => InternalPluFlags.Length > 5 && InternalPluFlags[5] == '1';
-    public bool IsInternalPluFlag7 => InternalPluFlags.Length > 6 && InternalPluFlags[6] == '1';
-    public bool IsInternalPluFlag8 => InternalPluFlags.Length > 7 && InternalPluFlags[7] == '1';
-    public bool IsInternalPluFlag9 => InternalPluFlags.Length > 8 && InternalPluFlags[8] == '1';
-    public bool IsInternalPluFlag10 => InternalPluFlags.Length > 9 && InternalPluFlags[9] == '1';
-    public bool IsInternalPluFlag11 => InternalPluFlags.Length > 10 && InternalPluFlags[10] == '1';
-    public bool IsInternalPluFlag12 => InternalPluFlags.Length > 11 && InternalPluFlags[11] == '1';
-    public bool IsInternalPluFlag13 => InternalPluFlags.Length > 12 && InternalPluFlags[12] == '1';
-    public bool IsInternalPluFlag14 => InternalPluFlags.Length > 13 && InternalPluFlags[13] == '1';
-    public bool IsInternalPluFlag15 => InternalPluFlags.Length > 14 && InternalPluFlags[14] == '1';
-    public bool IsInternalPluFlag16 => InternalPluFlags.Length > 15 && InternalPluFlags[15] == '1';
-    public int LoyaltyPointsPrice1 { get; set; }
-    public int LoyaltyPointsPrice2 { get; set; }
-    public int LoyaltyPointsPrice3 { get; set; }
-    public int LoyaltyPointsPrice4 { get; set; }
-    public int LoyaltyPointsPrice5 { get; set; }
-    public int LoyaltyPointsPrice6 { get; set; }
-    public int LoyaltyPointsPrice7 { get; set; }
-    public int LoyaltyPointsPrice8 { get; set; }
-    public int LoyaltyPointsPrice9 { get; set; }
-    public int CouponNumber { get; set; }
-    public decimal DealMaximumPrice { get; set; }
-    public decimal DealPremiumPrice { get; set; }
-    public int ToppingKeyboardNo { get; set; }
-    public int ToppingGroupNo { get; set; }
-    public DateTime? LastPurchaseDate { get; set; }
-    public int FreeToppingsQty { get; set; }
-    public int CateringItemType { get; set; }
-    public int CateringSize { get; set; }
-    public int ClassificationGroup1 { get; set; }
-    public int ClassificationGroup2 { get; set; }
-    public int ClassificationGroup3 { get; set; }
-    public int ClassificationGroup4 { get; set; }
-    public int ClassificationGroup5 { get; set; }
-    public int ClassificationGroup6 { get; set; }
-    public int ClassificationGroup7 { get; set; }
-    public int ClassificationGroup8 { get; set; }
-    public int ClassificationGroup9 { get; set; }
-    public int RedemptionPoints { get; set; }
-    public int VariantGroup { get; set; }
-    public decimal ToppingPremiumPrice { get; set; }
-    public int UseByPeriod { get; set; }
-    public decimal CostMaxVariancePercent { get; set; }
-    public decimal ContainerContentSize { get; set; }
-    public long? ReferredPluNo { get; set; }
-    public int? ReferredQuantity { get; set; }
-    public int? ReOrderLevel { get; set; }
-    public int? ReOrderQuantity { get; set; }
-    public int? BinLocationNo { get; set; }
-    public int? StocktakingGroup { get; set; }
-    public string? Supplier1AccountNo { get; set; }
-    public string? Supplier2AccountNo { get; set; }
-    public string? Supplier3AccountNo { get; set; }
     public string? Supplier1StockCode { get; set; }
-    public string? Supplier2StockCode { get; set; }
-    public string? Supplier3StockCode { get; set; }
-    public decimal BottleEmptyWeight { get; set; }
-    public decimal BottleFullWeight { get; set; }
-    public int BottleTotCount { get; set; }
-    public int Supplier1LeadTime { get; set; }
-    public int Supplier2LeadTime { get; set; }
-    public int Supplier3LeadTime { get; set; }
-    public decimal QuotedPriceSupplier1 { get; set; }
-    public decimal QuotedPriceSupplier2 { get; set; }
-    public decimal QuotedPriceSupplier3 { get; set; }
-    public DateTime? DateQuotedSupplier1 { get; set; }
-    public DateTime? DateQuotedSupplier2 { get; set; }
-    public DateTime? DateQuotedSupplier3 { get; set; }
-    public string CheckPriceSupplierFlags { get; set; } = "NNN";
-    public bool IsCheckPriceSupplier1 => CheckPriceSupplierFlags.Length > 0 && CheckPriceSupplierFlags[0] == 'Y';
-    public bool IsCheckPriceSupplier2 => CheckPriceSupplierFlags.Length > 1 && CheckPriceSupplierFlags[1] == 'Y';
-    public bool IsCheckPriceSupplier3 => CheckPriceSupplierFlags.Length > 2 && CheckPriceSupplierFlags[2] == 'Y';
-    public int? StockPurchaseGroup { get; set; }
-    public decimal? PurchasePriceVariancePercent { get; set; }
-    public string? WebItemDescription { get; set; }
-    public decimal? BoxQuantity { get; set; }
-    public decimal? PalletQuantity { get; set; }
     public DateTime DateTimeCreated { get; set; }
     public DateTime DateTimeEdited { get; set; }
-    public int? ClerkEdited { get; set; }
-    public string? Version { get; set; }
 }

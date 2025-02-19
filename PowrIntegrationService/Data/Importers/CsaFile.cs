@@ -7,7 +7,7 @@ namespace PowrIntegrationService.Data.Importers;
 
 public class CsaFile<T>(string filePath, bool hasHeaderRecord, Func<ShouldSkipRecordArgs, bool>? shouldSkipRecordMethod = null, ClassMap<T>? map = null)
 {
-    private string _filePath = filePath;
+    private readonly string _filePath = filePath;
     private ImmutableArray<T> _cachedRecords;
 
     public IEnumerable<T> ReadRecords()
