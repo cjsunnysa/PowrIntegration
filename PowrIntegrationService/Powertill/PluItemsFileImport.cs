@@ -3,22 +3,22 @@ using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PowrIntegration.Shared;
+using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Extensions;
+using PowrIntegrationService.File;
 using PowrIntegrationService.MessageQueue;
 using PowrIntegrationService.Options;
-using PowrIntegrationService.Powertill;
 using System.Collections.Immutable;
 using System.Diagnostics.Metrics;
 
-namespace PowrIntegrationService.Data.Importers;
-public sealed class PluItemsImport(IOptions<IntegrationServiceOptions> options, RabbitMqFactory rabbitMqFactory, ILogger<PluItemsImport> logger)
+namespace PowrIntegrationService.Powertill;
+public sealed class PluItemsFileImport(IOptions<IntegrationServiceOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsFileImport> logger)
     : FileImporter<PluItemDto>(options, "PluCreat.csa", logger)
 {
-    private readonly RabbitMqFactory _rabbitMqFactory = rabbitMqFactory;
-    private readonly ILogger<PluItemsImport> _logger = logger;
-
+    private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
     private sealed record PluFileItem
     {
         public required long PluNumber { get; init; }
@@ -341,7 +341,7 @@ public sealed class PluItemsImport(IOptions<IntegrationServiceOptions> options, 
         }
     }
 
-    protected async override Task<Result<ImmutableArray<PluItemDto>>> ExecuteImport(CancellationToken cancellationToken)
+    protected async override Task<Result<ImmutableArray<PluItemDto>>> Import(CancellationToken cancellationToken)
     {
         try
         {
@@ -349,14 +349,17 @@ public sealed class PluItemsImport(IOptions<IntegrationServiceOptions> options, 
 
             var pluItemMap = new PluItemMap();
 
-            var csaFile = new PowertillCsaFile<PluFileItem>(FilePath, null, pluItemMap);
+            var csaFile = new CsaFile<PluFileItem>(FilePath);
 
-            var pluFileItems = csaFile.ReadRecords().ToImmutableArray();
+            var pluFileItems = 
+                csaFile
+                    .ReadRecords(hasHeaderRecord: false, shouldSkipRecordMethod: null, map: pluItemMap)
+                    .ToImmutableArray();
 
-            var dtos = 
+            var plus =
                 pluFileItems
-                    .Select(x => new PluItemDto
-                    { 
+                    .Select(x => new PluItem
+                    {
                         PluNumber = x.PluNumber,
                         PluDescription = x.PluDescription,
                         SizeDescription = x.SizeDescription,
@@ -364,21 +367,23 @@ public sealed class PluItemsImport(IOptions<IntegrationServiceOptions> options, 
                         SalesGroup = x.SalesGroup,
                         Flags = x.Flags,
                         Supplier1StockCode = x.Supplier1StockCode,
+                        Supplier2StockCode = x.Supplier2StockCode,
                         DateTimeEdited = x.DateTimeEdited,
                         DateTimeCreated = x.DateTimeCreated
                     })
                     .ToImmutableArray();
+            
+            var outboxItems = plus.MapToOutboxItems();
 
-            var syncQueuePublisher = await _rabbitMqFactory.CreatePublisher<ZraQueuePublisher>(cancellationToken);
+            var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-            foreach (var item in dtos)
-            {
-                var publishResult = await syncQueuePublisher.PublishSavePluItem(item, cancellationToken);
+            await dbContext.BulkInsertOrUpdateAsync(outboxItems, cancellationToken: cancellationToken);
 
-                publishResult.LogErrors(_logger);
-            }
+            await dbContext.BulkInsertOrUpdateAsync(plus, cancellationToken: cancellationToken);
 
-            return Result.Ok(dtos);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return Result.Ok();
         }
         catch (Exception ex)
         {

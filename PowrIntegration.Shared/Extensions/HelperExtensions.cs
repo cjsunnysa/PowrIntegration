@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace PowrIntegrationService.Extensions;
+namespace PowrIntegration.Shared.Extensions;
+
 public static class HelperExtensions
 {
     public static string ToSnakeCase(this string input)

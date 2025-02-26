@@ -3,11 +3,11 @@
 public sealed record PluItemDto
 {
     public required long PluNumber { get; init; }
-    public string? PluDescription { get; set; }
-    public string? SizeDescription { get; set; }
-    public decimal SellingPrice1 { get; set; }
-    public int SalesGroup { get; set; }
-    public string Flags { get; set; } = string.Empty;
+    public string? PluDescription { get; init; }
+    public string? SizeDescription { get; init; }
+    public decimal SellingPrice1 { get; init; }
+    public int SalesGroup { get; init; }
+    public string Flags { get; init; } = string.Empty;
     public bool IsFlag48 => Flags.Length > 0 && Flags[0] == 'Y';
     public bool IsFlag47 => Flags.Length > 1 && Flags[1] == 'Y';
     public bool IsFlag46 => Flags.Length > 2 && Flags[2] == 'Y';
@@ -56,7 +56,8 @@ public sealed record PluItemDto
     public bool IsPreparationPlu => Flags.Length > 45 && Flags[45] == 'Y';
     public bool IsCuttingSchedulePlu => Flags.Length > 46 && Flags[46] == 'Y';
     public bool IsPromptForPrice => Flags.Length > 47 && Flags[47] == 'Y';
-    public string? Supplier1StockCode { get; set; }
-    public DateTime DateTimeCreated { get; set; }
-    public DateTime DateTimeEdited { get; set; }
+    public string? Supplier1StockCode { get; init; }
+    public string? Supplier2StockCode { get; init; }
+    public DateTime DateTimeCreated { get; init; }
+    public DateTime DateTimeEdited { get; init; }
 }

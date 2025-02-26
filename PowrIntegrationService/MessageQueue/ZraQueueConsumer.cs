@@ -6,6 +6,7 @@ using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Zra;
 using PowrIntegrationService.Dtos;
 using RabbitMQ.Client;
+using PowrIntegration.Shared.MessageQueue;
 
 namespace PowrIntegrationService.MessageQueue;
 
@@ -24,6 +25,7 @@ public sealed class ZraQueueConsumer(
         {
             QueueMessageType.ItemInsert => await HandleItemInsertMessage(body, cancellationToken),
             QueueMessageType.ItemUpdate => await HandleItemUpdateMessage(body, cancellationToken),
+            QueueMessageType.SavePurchase => await HandleSavePurchaseMessage(body, cancellationToken),
             _ => Result.Fail($"Unkown message type: {Enum.GetName(messageType)}.")
         };
 
@@ -69,5 +71,16 @@ public sealed class ZraQueueConsumer(
         return plu is null
             ? Result.Fail("Update plu item message processing error. Message body did not contain a valid PLU record.")
             : await _zraService.UpdateItem(plu, cancellationToken);
+    }
+
+    private async Task<Result> HandleSavePurchaseMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(body.ToArray());
+
+        var purchase = await JsonSerializer.DeserializeAsync<PurchaseDto>(stream, cancellationToken: cancellationToken);
+
+        return purchase is null
+            ? Result.Fail("Save purchase message processing error. Message body did not contain a valid purchase record.")
+            : await _zraService.SavePurchase(purchase, cancellationToken);
     }
 }

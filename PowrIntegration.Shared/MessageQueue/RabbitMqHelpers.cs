@@ -1,12 +1,10 @@
 ﻿using FluentResults;
 using PowrIntegration.Shared.Extensions;
-using PowrIntegration.Shared.MessageQueue;
-using PowrIntegrationService.Extensions;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 
-namespace PowrIntegrationService.MessageQueue;
+namespace PowrIntegration.Shared.MessageQueue;
 public static class RabbitMqHelpers
 {
     public static Result<QueueMessageType> GetQueueMessageType(this BasicDeliverEventArgs args)

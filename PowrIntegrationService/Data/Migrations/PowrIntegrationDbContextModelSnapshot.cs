@@ -17,6 +17,65 @@ namespace PowrIntegrationService.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
+            modelBuilder.Entity("PowrIntegrationService.Data.Entities.OutboxItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte>("FailureCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("MessageBody")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<int>("MessageType")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OutboxItems");
+                });
+
+            modelBuilder.Entity("PowrIntegrationService.Data.Entities.PluItem", b =>
+                {
+                    b.Property<long>("PluNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("DateTimeCreated")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateTimeEdited")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Flags")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PluDescription")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SalesGroup")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("SellingPrice1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SizeDescription")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Supplier1StockCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Supplier2StockCode")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PluNumber");
+
+                    b.ToTable("PluItems");
+                });
+
             modelBuilder.Entity("PowrIntegrationService.Data.Entities.ZraClassificationClass", b =>
                 {
                     b.Property<long>("Code")

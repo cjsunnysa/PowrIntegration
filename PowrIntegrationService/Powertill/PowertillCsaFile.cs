@@ -1,14 +1,9 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 using CsvHelper.TypeConversion;
-using PowrIntegrationService.Data.Importers;
 using System.Globalization;
 
 namespace PowrIntegrationService.Powertill;
-
-public sealed class PowertillCsaFile<T>(string filePath, Func<ShouldSkipRecordArgs, bool>? shouldSkipRecord = null, ClassMap<T>? mapping = null)
-    : CsaFile<T>(filePath, false, shouldSkipRecord, mapping) where T : class
-{ }
 
 public sealed class DelphiDateConverter : DefaultTypeConverter
 {

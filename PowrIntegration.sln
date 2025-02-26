@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowrIntegrationService", "P
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowrIntegration.VsdcService", "PowrIntegration.VsdcService\PowrIntegration.VsdcService.csproj", "{22873DA1-5953-4C63-9362-3B55D22421C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowrIntegration.Shared", "PowrIntegration.Shared\PowrIntegration.Shared.csproj", "{F9925425-83BD-447E-8757-F18C021B9A8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22873DA1-5953-4C63-9362-3B55D22421C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22873DA1-5953-4C63-9362-3B55D22421C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22873DA1-5953-4C63-9362-3B55D22421C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22873DA1-5953-4C63-9362-3B55D22421C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9925425-83BD-447E-8757-F18C021B9A8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9925425-83BD-447E-8757-F18C021B9A8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9925425-83BD-447E-8757-F18C021B9A8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9925425-83BD-447E-8757-F18C021B9A8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

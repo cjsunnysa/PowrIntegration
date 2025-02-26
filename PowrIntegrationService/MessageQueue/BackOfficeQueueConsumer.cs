@@ -1,12 +1,14 @@
 ﻿using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
+using PowrIntegration.Shared.MessageQueue;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Data.Importers;
 using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
+using PowrIntegrationService.Powertill;
 using RabbitMQ.Client;
 using System.Collections.Immutable;
 using System.Text.Json;
@@ -18,9 +20,11 @@ public sealed class BackOfficeQueueConsumer(
     IChannel channel,
     MessageQueueOptions options,
     IDbContextFactory<PowrIntegrationDbContext> dbContextFactory,
+    PurchaseFileExport purchaseExport,
     ILogger<BackOfficeQueueConsumer> logger) : RabbitMqConsumer(channel, options, logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
+    private readonly PurchaseFileExport _purchaseExport = purchaseExport;
     private readonly ILogger<BackOfficeQueueConsumer> _logger = logger;
 
     protected async override Task<MessageAction> HandleMessage(QueueMessageType messageType, ReadOnlyMemory<byte> messageBody, CancellationToken cancellationToken)
@@ -30,6 +34,7 @@ public sealed class BackOfficeQueueConsumer(
             QueueMessageType.ZraStandardCodes => await HandleStandardCodeMessage(messageBody, cancellationToken),
             QueueMessageType.ZraClassificationCodes => await HandleClassificationCodeMessage(messageBody, cancellationToken),
             QueueMessageType.ZraImportItems => await HandleZraImportItemsMessage(messageBody, cancellationToken),
+            QueueMessageType.Purchase => await HandlePurchaseMessage(messageBody, cancellationToken),
             _ => Result.Fail($"Unkown message type: {(int)messageType}.")
         };
 
@@ -209,5 +214,19 @@ public sealed class BackOfficeQueueConsumer(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
+    }
+
+    private async Task<Result> HandlePurchaseMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(body.ToArray());
+
+        PurchaseDto? dto = await JsonSerializer.DeserializeAsync<PurchaseDto>(stream, cancellationToken: cancellationToken);
+
+        if (dto is null)
+        {
+            return Result.Fail($"Cannot deserialize message. Message body is not a valid purchase. Body: {stream.ToArray()}");
+        }
+
+        return await _purchaseExport.Execute(dto, cancellationToken);
     }
 }

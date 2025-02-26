@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using PowrIntegration.Shared.MessageQueue;
 using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Options;
 using RabbitMQ.Client;
@@ -84,6 +85,25 @@ public sealed class BackOfficeQueuePublisher(
         catch (Exception ex)
         {
             return Result.Fail(new ExceptionalError("An exception occured pushing Zra Import Items to the queue.", ex));
+        }
+    }
+
+    public async Task<Result> PublishPurchases(ImmutableArray<PurchaseDto> dtos, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (dtos.Length == 0)
+            {
+                return Result.Ok();
+            }
+
+            await BatchPublish(QueueMessageType.Purchase, dtos, cancellationToken);
+            
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(new ExceptionalError("An exception occured pushing Purchases to the queue.", ex));
         }
     }
 }

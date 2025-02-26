@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Importers;
 using PowrIntegrationService.Options;
+using PowrIntegrationService.Powertill;
 using PowrIntegrationService.Zra;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -60,6 +61,7 @@ public class RabbitMqFactory(
             channel,
             _options.BackOfficeQueue,
             _services.GetRequiredService<IDbContextFactory<PowrIntegrationDbContext>>(),
+            _services.GetRequiredService<PurchaseFileExport>(),
             _services.GetRequiredService<ILogger<BackOfficeQueueConsumer>>());
     }
 

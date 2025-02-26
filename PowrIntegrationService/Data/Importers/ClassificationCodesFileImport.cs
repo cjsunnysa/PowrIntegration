@@ -7,12 +7,14 @@ using EFCore.BulkExtensions;
 using System.Diagnostics.Metrics;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Options;
+using PowrIntegration.Shared;
+using PowrIntegrationService.File;
 
 namespace PowrIntegrationService.Data.Importers;
 
-public sealed class ClassificationCodesImport(
+public sealed class ClassificationCodesFileImport(
     IOptions<IntegrationServiceOptions> options,
-    ILogger<ClassificationCodesImport> logger,
+    ILogger<ClassificationCodesFileImport> logger,
     IDbContextFactory<PowrIntegrationDbContext> dbContextFactory)
     : FileImporter<ZraClassificationCode>(options, "UNSPSC-Classification-Codes.csv", logger)
 {
@@ -59,7 +61,7 @@ public sealed class ClassificationCodesImport(
         }
     }
 
-    protected override async Task<Result<ImmutableArray<ZraClassificationCode>>> ExecuteImport(CancellationToken cancellationToken)
+    protected override async Task<Result<ImmutableArray<ZraClassificationCode>>> Import(CancellationToken cancellationToken)
     {
         try
         {
@@ -69,13 +71,16 @@ public sealed class ClassificationCodesImport(
 
             var map = new CsaFileRowMap();
 
-            var csaFile = new CsaFile<CsaFileRow>(
-                filePath,
-                true,
-                args => args.Row[2] == string.Empty || args.Row[5] == string.Empty || args.Row[8] == string.Empty || args.Row[11] == string.Empty,
-                map);
+            var csaFile = new CsaFile<CsaFileRow>(filePath);
 
-            var csaRows = csaFile.ReadRecords();
+            var csaRows = csaFile.ReadRecords(
+                hasHeaderRecord: true,
+                shouldSkipRecordMethod: 
+                    args => args.Row[2] == string.Empty || 
+                    args.Row[5] == string.Empty || 
+                    args.Row[8] == string.Empty || 
+                    args.Row[11] == string.Empty,
+                map: map);
 
             var segments = csaRows.DistinctBy(x => x.Segment).Select(x => new ZraClassificationSegment { Code = x.Segment, Name = x.SegmentTitle, Description = x.SegmentDefinition }).ToImmutableArray();
             var families = csaRows.DistinctBy(x => x.Family).Select(x => new ZraClassificationFamily { Code = x.Family, Name = x.FamilyTitle, Description = x.FamilyDefinition, SegmentCode = x.Segment }).ToImmutableArray();

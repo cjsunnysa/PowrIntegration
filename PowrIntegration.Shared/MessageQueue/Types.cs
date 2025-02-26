@@ -1,10 +1,4 @@
-﻿namespace PowrIntegrationService.MessageQueue;
-
-public enum MessageQueueType
-{
-    Backoffice = 1,
-    Zra = 2
-}
+﻿namespace PowrIntegration.Shared.MessageQueue;
 
 public enum QueueMessageType
 {
@@ -15,5 +9,6 @@ public enum QueueMessageType
     StockTake = 5,
     ZraStandardCodes = 6,
     ZraClassificationCodes = 7,
-    ZraImportItems = 8
+    ZraImportItems = 8,
+    SavePurchase = 9
 }

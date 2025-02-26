@@ -1,4 +1,5 @@
-﻿using FluentResults;
+﻿using AutoFixture;
+using FluentResults;
 using Microsoft.Extensions.Options;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
@@ -8,8 +9,10 @@ using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra.ClassificationCodes;
 using PowrIntegrationService.Zra.GetImports;
+using PowrIntegrationService.Zra.GetPurchases;
 using PowrIntegrationService.Zra.InitializeDevice;
 using PowrIntegrationService.Zra.SaveItem;
+using PowrIntegrationService.Zra.SavePurchase;
 using PowrIntegrationService.Zra.StandardCodes;
 using PowrIntegrationService.Zra.UpdateItem;
 using System.Collections.Immutable;
@@ -286,11 +289,103 @@ public class ZraService(HttpClient httpClient, IOptions<ZraApiOptions> apiOption
         }
         catch (TimeoutRejectedException tEx)
         {
-            return Result.Fail(new HttpRequestTimoutError("ZRA API Initialize Device request timed-out.", tEx));
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Get Imports request timed-out.", tEx));
         }
         catch (BrokenCircuitException cEx)
         {
-            return Result.Fail(new CircuitBreakerError("ZRA API Initialize Device request failed due to the circuit breaker.", cEx));
+            return Result.Fail(new CircuitBreakerError("ZRA API Get Imports request failed due to the circuit breaker.", cEx));
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(new ExceptionalError(ex));
+        }
+    }
+
+    public async Task<Result<ImmutableArray<PurchaseDto>>> GetPurchases(CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("Sending Get Purchases request to the ZRA API.");
+
+            var request = new GetPurchasesRequest
+            {
+                tpin = _apiOptions.TaxpayerIdentificationNumber,
+                bhfId = _apiOptions.TaxpayerBranchIdentifier,
+            };
+
+            var httpResponse = await _httpClient.PostAsJsonAsync("trnsPurchase/selectTrnsPurchaseSales", request, cancellationToken);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                return Result.Fail(new Error($"Error response from ZRA API Get Purchases request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+            }
+
+            var response = await httpResponse.Content.ReadFromJsonAsync<GetPurchasesResponse>(cancellationToken: cancellationToken);
+
+            if (response is null)
+            {
+                string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Get Purchases request. ResponseBody: {body}"));
+            }
+
+            var dtos = response.MapToDtos();
+
+            return
+                response.resultCd == ZraResponseCode.SUCCESS || response.resultCd == ZraResponseCode.NO_SEARCH_RESULT
+                ? Result.Ok(dtos)
+                : Result.Fail($"ZRA API Get Purchases request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Get Purchases request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Get Purchases request failed due to the circuit breaker.", cEx));
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(new ExceptionalError(ex));
+        }
+    }
+
+    public async Task<Result> SavePurchase(PurchaseDto purchase, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("Sending Save Purchases request to the ZRA API.");
+
+            var request = purchase.MapToSavePurchaseRequest(_apiOptions);
+
+            var httpResponse = await _httpClient.PostAsJsonAsync("trnsPurchase/savePurchase", request, cancellationToken);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                return Result.Fail(new Error($"Error response from ZRA API Save Purchase request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
+            }
+
+            var response = await httpResponse.Content.ReadFromJsonAsync<GetPurchasesResponse>(cancellationToken: cancellationToken);
+
+            if (response is null)
+            {
+                string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+                return Result.Fail(new Error($"Unexepected response content from ZRA API Save Purchase request. ResponseBody: {body}"));
+            }
+
+            return
+                response.resultCd == ZraResponseCode.SUCCESS
+                ? Result.Ok()
+                : Result.Fail($"ZRA API Save Purchase request failure response recieved: Code: {response.resultCd}; Message: {response.resultMsg}.");
+        }
+        catch (TimeoutRejectedException tEx)
+        {
+            return Result.Fail(new HttpRequestTimoutError("ZRA API Save Purchase request timed-out.", tEx));
+        }
+        catch (BrokenCircuitException cEx)
+        {
+            return Result.Fail(new CircuitBreakerError("ZRA API Save Purchase request failed due to the circuit breaker.", cEx));
         }
         catch (Exception ex)
         {

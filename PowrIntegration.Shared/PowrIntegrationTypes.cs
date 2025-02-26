@@ -1,4 +1,4 @@
-﻿namespace PowrIntegrationService;
+﻿namespace PowrIntegration.Shared;
 
 public static class PowrIntegrationValues
 {

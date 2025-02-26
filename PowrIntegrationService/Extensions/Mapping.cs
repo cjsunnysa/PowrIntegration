@@ -1,11 +1,13 @@
-﻿using PowrIntegrationService.Data.Entities;
+﻿using PowrIntegration.Shared.MessageQueue;
+using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Data.Importers;
 using PowrIntegrationService.Dtos;
-using PowrIntegrationService.MessageQueue;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra.ClassificationCodes;
 using PowrIntegrationService.Zra.GetImports;
+using PowrIntegrationService.Zra.GetPurchases;
 using PowrIntegrationService.Zra.SaveItem;
+using PowrIntegrationService.Zra.SavePurchase;
 using PowrIntegrationService.Zra.UpdateItem;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -187,5 +189,141 @@ public static class Mapping
                 .FirstOrDefault(x => x.SalesGroupId == salesGroup)
                 ?.TaxTypeCode
                 ?? SaveItemRequest.TaxTypeCode.StandardRated;
+    }
+
+    public static ImmutableArray<OutboxItem> MapToOutboxItems(this ImmutableArray<PluItem> records)
+    {
+        return
+            records
+                .Select(x => new OutboxItem
+                {
+                    MessageType = QueueMessageType.ItemInsert,
+                    MessageBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(x))
+                })
+                .ToImmutableArray();
+    }
+
+    public static ImmutableArray<PurchaseDto> MapToDtos(this GetPurchasesResponse response)
+    {
+        return
+            response
+                .Data
+                ?.SaleList
+                .Select(x => new PurchaseDto
+                {
+                    SupplierTaxPayerIdentifier = x.spplrTpin,
+                    SupplierName = x.spplrNm,
+                    SupplierBranchIdentifier = x.spplrBhfId,
+                    SupplierInvoiceNumber = x.spplrInvcNo,
+                    RecieptTypeCode = x.rcptTyCd,
+                    PaymentTypeCode = x.pmtTyCd,
+                    ConfirmedDate = x.cfmDt,
+                    SalesDate = x.salesDt,
+                    StockReleaseDate = x.stockRlsDt,
+                    TotalItemCount = x.totItemCnt,
+                    TotalTaxableAmount = x.totTaxblAmt,
+                    TotalTaxAmount = x.totTaxAmt,
+                    TotalAmount = x.totAmt,
+                    Remark = x.remark,
+                    Items = 
+                        x.itemList
+                            .Select(i => new PurchaseDto.PurchaseItemDto 
+                            { 
+                                SequenceNumber = i.ItemSeq,
+                                SupplierItemCode = i.ItemCd,
+                                ClassificationCode = i.ItemClsCd,
+                                Name = i.ItemNm,
+                                Barcode = i.Bcd,
+                                PackagingUnitCode = i.PkgUnitCd,
+                                Package = i.Pkg,
+                                QuantityUnitCode = i.QtyUnitCd,
+                                Quantity = i.Qty,
+                                InclusiveUnitPrice = i.Prc,
+                                SupplyAmount = i.SplyAmt,
+                                DiscountRate = i.DcRt,
+                                DiscountAmount = i.DcAmt,
+                                VatCategoryCode = i.VatCatCd,
+                                IplCategoryCode = i.IplCatCd,
+                                TlCategoryCode = i.TlCatCd,
+                                ExciseCategoryCode = i.ExciseTxCatC,
+                                VatTaxableAmount = i.VatTaxblAmt,
+                                IplTaxableAmount = i.IplTaxblAmt,
+                                TlTaxableAmount = i.IplTaxblAmt,
+                                ExciseTaxableAmount = i.ExciseTaxblAmt,
+                                VatAmount = i.VatAmt,
+                                IplAmount = i.IplAmt,
+                                TlAmount = i.TlAmt,
+                                ExciseAmount = i.ExciseTxAmt,
+                                TaxableAmount = i.TaxblAmt,
+                                TotalAmount = i.TotAmt
+                            })
+                            .ToImmutableArray()
+                })
+                .ToImmutableArray()
+                ?? [];                
+    }
+
+    public static SavePurchaseRequest MapToSavePurchaseRequest(this PurchaseDto purchase, ZraApiOptions apiOptions)
+    {
+        return new SavePurchaseRequest
+        {
+            tpin = apiOptions.TaxpayerIdentificationNumber,
+            bhfId = apiOptions.TaxpayerBranchIdentifier,
+            InvcNo = purchase.SupplierInvoiceNumber.ToString(),
+            SpplrTpin = purchase.SupplierTaxPayerIdentifier,
+            SpplrBhfId = purchase.SupplierBranchIdentifier,
+            SpplrNm = purchase.SupplierName,
+            SpplrInvcNo = purchase.SupplierInvoiceNumber,
+            RegTyCd = purchase.RecieptTypeCode,
+            PchsTyCd = "N",
+            RcptTyCd = "P",
+            PmtTyCd = "01",
+            PchsSttsCd = "02",
+            CfmDt = DateTime.Now.ToString("yyyyMMddHHmmss"),
+            PchsDt = purchase.SalesDate,
+            TotItemCnt = purchase.TotalItemCount,
+            TotTaxblAmt = purchase.TotalTaxableAmount,
+            TotTaxAmt = purchase.TotalTaxAmount,
+            TotAmt = purchase.TotalAmount,
+            Remark = purchase.Remark,
+            RegrNm = "Admin",
+            RegrId = "Admin",
+            ModrNm = "Admin",
+            ModrId = "Admin",
+            ItemList =
+                    purchase
+                        .Items
+                        .Select(x => new SavePurchaseRequest.PurchaseItem
+                        {
+                            ItemSeq = x.SequenceNumber,
+                            ItemCd = x.SupplierItemCode,
+                            ItemClsCd = x.ClassificationCode,
+                            ItemNm = x.Name,
+                            Bcd = x.Barcode,
+                            PkgUnitCd = x.PackagingUnitCode,
+                            Pkg = x.Package,
+                            QtyUnitCd = x.QuantityUnitCode ?? "",
+                            Qty = x.Quantity,
+                            Prc = x.InclusiveUnitPrice,
+                            SplyAmt = x.SupplyAmount,
+                            DcRt = x.DiscountRate,
+                            DcAmt = x.DiscountAmount,
+                            TaxTyCd = x.VatCategoryCode,
+                            IplCatCd = x.IplCategoryCode,
+                            TlCatCd = x.TlCategoryCode,
+                            ExciseCatCd = x.ExciseCategoryCode,
+                            TaxblAmt = x.VatTaxableAmount,
+                            VatCatCd = x.VatCategoryCode,
+                            IplTaxblAmt = x.IplTaxableAmount,
+                            TlTaxblAmt = x.TlTaxableAmount,
+                            ExciseTaxblAmt = x.ExciseTaxableAmount,
+                            TaxAmt = x.TaxAmount,
+                            IplAmt = x.IplAmount,
+                            TlAmt = x.TlAmount,
+                            ExciseTxAmt = x.ExciseAmount,
+                            TotAmt = x.TotalAmount
+                        })
+                        .ToImmutableArray()
+        };
     }
 }

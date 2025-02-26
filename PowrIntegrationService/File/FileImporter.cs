@@ -4,7 +4,7 @@ using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
 using System.Collections.Immutable;
 
-namespace PowrIntegrationService.Data.Importers;
+namespace PowrIntegrationService.File;
 
 public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> options, string filename, ILogger logger)
 {
@@ -20,7 +20,7 @@ public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> option
 
         _logger.LogDebug("Checking for {FilePath}.", filePath);
 
-        if (!File.Exists(filePath))
+        if (!System.IO.File.Exists(filePath))
         {
             _logger.LogDebug("{FilePath} not found.", filePath);
 
@@ -29,7 +29,7 @@ public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> option
 
         _logger.LogInformation("Importing {FilePath}.", filePath);
 
-        var importResult = await ExecuteImport(cancellationToken);
+        var importResult = await Import(cancellationToken);
 
         importResult.LogErrors(_logger);
 
@@ -60,7 +60,7 @@ public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> option
 
             var historyFilePath = Path.Combine(historyDirectory, historyFileName);
 
-            File.Move(filePath, historyFilePath);
+            System.IO.File.Move(filePath, historyFilePath);
         }
         catch (Exception ex)
         {
@@ -68,5 +68,5 @@ public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> option
         }
     }
 
-    protected abstract Task<Result<ImmutableArray<T>>> ExecuteImport(CancellationToken cancellationToken);
+    protected abstract Task<Result<ImmutableArray<T>>> Import(CancellationToken cancellationToken);
 }

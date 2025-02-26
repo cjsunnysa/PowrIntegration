@@ -1,7 +1,11 @@
-﻿using PowrIntegrationService.Extensions;
+﻿using PowrIntegration.Shared;
+using PowrIntegration.Shared.Extensions;
+using PowrIntegration.Shared.MessageQueue;
+using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Options;
 using RabbitMQ.Client;
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 
 namespace PowrIntegrationService.MessageQueue;
 
@@ -25,12 +29,99 @@ public abstract class RabbitMqPublisher
 
     protected async Task Publish(QueueMessageType messageType, byte[] message, CancellationToken cancellationToken)
     {
+        await EnsureQueueCreated(cancellationToken);
+
+        BasicProperties properties = CreateBasicMessageProperties(messageType);
+
+        await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: message, cancellationToken: cancellationToken);
+
+        _messagesPublishedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
+
+        _logger.LogInformation("Message published to queueName: {QueueName}, Id: {MessageId}, MessageType: {MessageType}", Options.Name, properties.MessageId, Enum.GetName(messageType));
+    }
+
+    protected async Task BatchPublish<T>(QueueMessageType messageType, IEnumerable<T> records, CancellationToken cancellationToken)
+    {
+        await EnsureQueueCreated(cancellationToken);
+
+        await _channel.TxSelectAsync(cancellationToken);
+
+        try
+        {
+
+            foreach (var record in records)
+            {
+                BasicProperties properties = CreateBasicMessageProperties(messageType);
+
+                using var stream = new MemoryStream();
+
+                await JsonSerializer.SerializeAsync(stream, record, cancellationToken: cancellationToken);
+
+                await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: stream.ToArray(), cancellationToken);
+            }
+
+            await _channel.TxCommitAsync(cancellationToken);
+        }
+        catch(Exception)
+        {
+            throw;
+        }
+        finally
+        {
+            await _channel.TxRollbackAsync(cancellationToken);
+        }
+    }
+
+    protected async Task BatchPublish(IEnumerable<OutboxItem> records, CancellationToken cancellationToken)
+    {
+        await EnsureQueueCreated(cancellationToken);
+
+        await _channel.TxSelectAsync(cancellationToken);
+
+        try
+        {
+
+            foreach (var record in records)
+            {
+                BasicProperties properties = CreateBasicMessageProperties(record.MessageType);
+
+                await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: record.MessageBody, cancellationToken);
+            }
+
+            await _channel.TxCommitAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+        finally
+        {
+            await _channel.TxRollbackAsync(cancellationToken);
+        }
+    }
+
+    private static BasicProperties CreateBasicMessageProperties(QueueMessageType messageType)
+    {
+        return new BasicProperties
+        {
+            Persistent = true,
+            MessageId = Guid.NewGuid().ToString(),
+            Priority = (byte)(messageType == QueueMessageType.ItemInsert ? 2 : 1),
+            Headers = new Dictionary<string, object?>
+            {
+                { "Type", Enum.GetName(messageType) },
+            }
+        };
+    }
+
+    private async Task EnsureQueueCreated(CancellationToken cancellationToken)
+    {
         await _channel.ExchangeDeclareAsync(
-                exchange: Options.DeadLetterQueue.ExchangeName,
-                type: ExchangeType.Direct,
-                durable: true,
-                autoDelete: false,
-                cancellationToken: cancellationToken);
+            exchange: Options.DeadLetterQueue.ExchangeName,
+            type: ExchangeType.Direct,
+            durable: true,
+            autoDelete: false,
+            cancellationToken: cancellationToken);
 
         await _channel.QueueDeclareAsync(
             queue: Options.DeadLetterQueue.Name,
@@ -56,22 +147,5 @@ public abstract class RabbitMqPublisher
                 { "x-max-priority", 2 }
             },
             cancellationToken: cancellationToken);
-
-        var properties = new BasicProperties
-        {
-            Persistent = true,
-            MessageId = Guid.NewGuid().ToString(),
-            Priority = (byte)(messageType == QueueMessageType.ItemInsert ? 2 : 1),
-            Headers = new Dictionary<string, object?>
-            {
-                { "Type", Enum.GetName(messageType) },
-            },
-        };
-
-        await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: message, cancellationToken: cancellationToken);
-
-        _messagesPublishedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
-
-        _logger.LogInformation("Message published to queueName: {QueueName}, Id: {MessageId}, MessageType: {MessageType}", Options.Name, properties.MessageId, Enum.GetName(messageType));
     }
 }

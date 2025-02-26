@@ -1,10 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PowrIntegrationService.Data.Entities;
+using PowrIntegrationService.Dtos;
 
 namespace PowrIntegrationService.Data
 {
     public class PowrIntegrationDbContext(DbContextOptions<PowrIntegrationDbContext> options) : DbContext(options)
     {
+        public DbSet<PluItem> PluItems { get; set; }
+        public DbSet<OutboxItem> OutboxItems { get; set; }
         public DbSet<ZraClassificationClass> ZraClassificationClasses { get; set; }
         public DbSet<ZraClassificationCode> ZraClassificationCodes { get; set; }
         public DbSet<ZraClassificationFamily> ZraClassificationFamilies { get; set; }
@@ -15,6 +18,26 @@ namespace PowrIntegrationService.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<OutboxItem>()
+                .Property(o => o.Id)
+                .ValueGeneratedOnAdd(); // Configure auto-increment
+
+            modelBuilder.Entity<OutboxItem>()
+                .Property(o => o.MessageType)
+                .IsRequired();
+
+            modelBuilder.Entity<OutboxItem>()
+                .Property(o => o.MessageBody)
+                .IsRequired();
+
+            modelBuilder.Entity<PluItem>()
+                .HasKey(p => p.PluNumber);
+
+            modelBuilder.Entity<PluItem>()
+                .Property(p => p.PluNumber)
+                .IsRequired()
+                .ValueGeneratedNever();
+
             modelBuilder.Entity<ZraClassificationSegment>()
                 .HasKey(c => c.Code);
 

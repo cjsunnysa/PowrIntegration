@@ -12,6 +12,41 @@ namespace PowrIntegrationService.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "OutboxItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MessageType = table.Column<int>(type: "INTEGER", nullable: false),
+                    MessageBody = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    FailureCount = table.Column<byte>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxItems", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PluItems",
+                columns: table => new
+                {
+                    PluNumber = table.Column<long>(type: "INTEGER", nullable: false),
+                    PluDescription = table.Column<string>(type: "TEXT", nullable: true),
+                    SizeDescription = table.Column<string>(type: "TEXT", nullable: true),
+                    SellingPrice1 = table.Column<decimal>(type: "TEXT", nullable: false),
+                    SalesGroup = table.Column<int>(type: "INTEGER", nullable: false),
+                    Flags = table.Column<string>(type: "TEXT", nullable: false),
+                    Supplier1StockCode = table.Column<string>(type: "TEXT", nullable: true),
+                    Supplier2StockCode = table.Column<string>(type: "TEXT", nullable: true),
+                    DateTimeCreated = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DateTimeEdited = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PluItems", x => x.PluNumber);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ZraClassificationSegments",
                 columns: table => new
                 {
@@ -172,6 +207,12 @@ namespace PowrIntegrationService.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "OutboxItems");
+
+            migrationBuilder.DropTable(
+                name: "PluItems");
+
             migrationBuilder.DropTable(
                 name: "ZraClassificationCodes");
 

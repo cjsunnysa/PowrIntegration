@@ -16,5 +16,6 @@ public sealed record ZraApiOptions
 public sealed record TaxTypeMapping
 {
     public required int SalesGroupId { get; init; }
+    public required int TaxGroupId { get; init; }
     public required string TaxTypeCode { get; init; }
 }

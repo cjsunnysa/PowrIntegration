@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoFixture" Version="4.18.1" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="EFCore.BulkExtensions.Sqlite" Version="8.1.2" />
     <PackageReference Include="FluentResults" Version="3.16.0" />
@@ -38,5 +39,9 @@
 	<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
 	<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 	<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PowrIntegration.Shared\PowrIntegration.Shared.csproj" />
   </ItemGroup>
 </Project>

@@ -8,6 +8,7 @@ using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
+using PowrIntegration.Shared;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra;
@@ -37,6 +38,41 @@ internal static class Startup
             string content = await response.Content.ReadAsStringAsync(cancellationToken);
 
             response.Content = new StringContent(content);
+
+            return response;
+        }
+    }
+
+    private sealed class LoggingHandler : DelegatingHandler
+    {
+        private readonly ILogger<LoggingHandler> _logger;
+
+        public LoggingHandler(ILogger<LoggingHandler> logger)
+        {
+            _logger = logger;
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Request: {HttpMethod} {HttpRequestUri}", request.Method, request.RequestUri);
+
+            if (request.Content != null)
+            {
+                var requestBody = await request.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Request Body: {HttpBody}", requestBody);
+            }
+
+            var response = await base.SendAsync(request, cancellationToken);
+
+            _logger.LogInformation("Response: {HttpResponseStatusCode}", response.StatusCode);
+
+            if (response.Content != null)
+            {
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Response Body: {HttpResponseBody}", responseBody);
+            }
 
             return response;
         }
@@ -78,11 +114,13 @@ internal static class Startup
     public static IServiceCollection ConfigureHttpClients(this IServiceCollection services)
     {
         services.AddSingleton<BufferingHandler>();
+        services.AddSingleton<LoggingHandler>();
 
         services.AddHttpClient<ZraService>((provider, client) =>
             client.BaseAddress = new Uri(provider.GetRequiredService<IOptions<ZraApiOptions>>().Value.BaseUrl)
         )
         .AddHttpMessageHandler<BufferingHandler>()
+        .AddHttpMessageHandler<LoggingHandler>()
         .AddPolicyHandler(ZraCircuitBreakerPolicy)
         .AddPolicyHandler(ZraRetryPolicy)
         .AddPolicyHandler(ZraTimoutPolicy);
@@ -129,6 +167,7 @@ internal static class Startup
         services.Configure<IntegrationServiceOptions>(config);
         services.Configure<RabbitMqOptions>(config.GetSection(RabbitMqOptions.KEY));
         services.Configure<ZraApiOptions>(config.GetSection(ZraApiOptions.KEY));
+        services.Configure<PowertillOptions>(config.GetSection(PowertillOptions.KEY));
 
         return services;
     }

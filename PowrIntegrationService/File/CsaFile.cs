@@ -3,14 +3,14 @@ using CsvHelper;
 using System.Collections.Immutable;
 using System.Globalization;
 
-namespace PowrIntegrationService.Data.Importers;
+namespace PowrIntegrationService.File;
 
-public class CsaFile<T>(string filePath, bool hasHeaderRecord, Func<ShouldSkipRecordArgs, bool>? shouldSkipRecordMethod = null, ClassMap<T>? map = null)
+public class CsaFile<T>(string filePath)
 {
     private readonly string _filePath = filePath;
     private ImmutableArray<T> _cachedRecords;
 
-    public IEnumerable<T> ReadRecords()
+    public IEnumerable<T> ReadRecords(bool hasHeaderRecord, Func<ShouldSkipRecordArgs, bool>? shouldSkipRecordMethod = null, ClassMap<T>? map = null)
     {
         if (_cachedRecords.IsDefault)
         {

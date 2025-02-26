@@ -1,4 +1,7 @@
-﻿using PowrIntegrationService.Extensions;
+﻿using PowrIntegration.Shared;
+using PowrIntegration.Shared.Extensions;
+using PowrIntegration.Shared.MessageQueue;
+using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -95,57 +98,70 @@ public abstract class RabbitMqConsumer
 
     private async Task OnMessageReceived(object model, BasicDeliverEventArgs basicDeliverEventArgs)
     {
-        var messageId = basicDeliverEventArgs.BasicProperties.MessageId;
+        QueueMessageType? messageType = null;
 
-        _logger.LogInformation("Received message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
-
-        var getMessageTypeResult = basicDeliverEventArgs.GetQueueMessageType();
-
-        if (getMessageTypeResult.IsFailed)
+        try
         {
-            getMessageTypeResult.LogErrors(_logger);
+            var messageId = basicDeliverEventArgs.BasicProperties.MessageId;
 
-            _messagesRejectedCounter.Add(1, new KeyValuePair<string, object?>("type", "unkown_message_type"));
+            _logger.LogInformation("Received message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
 
-            await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, false, CancellationToken.None);
+            var getMessageTypeResult = basicDeliverEventArgs.GetQueueMessageType();
 
-            return;
+            if (getMessageTypeResult.IsFailed)
+            {
+                getMessageTypeResult.LogErrors(_logger);
+
+                _messagesRejectedCounter.Add(1, new KeyValuePair<string, object?>("type", "unkown_message_type"));
+
+                await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, false, CancellationToken.None);
+
+                return;
+            }
+
+            messageType = getMessageTypeResult.Value;
+
+            var messageBody = new byte[basicDeliverEventArgs.Body.Length];
+
+            basicDeliverEventArgs.Body.CopyTo(messageBody);
+
+            MessageAction action = await HandleMessage(messageType.Value, messageBody, CancellationToken.None);
+
+            if (action is MessageAction.Acknowledge)
+            {
+                _logger.LogInformation("Successfully processed message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
+
+                _messagesAcknowledgedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.Value.ToLabel()));
+
+                await _channel.BasicAckAsync(basicDeliverEventArgs.DeliveryTag, multiple: false, CancellationToken.None);
+
+                return;
+            }
+
+            if (action is MessageAction.Requeue)
+            {
+                _logger.LogInformation("Requeueing message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
+
+                _messagesRequeuedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.Value.ToLabel()));
+
+                await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: true, CancellationToken.None);
+
+                return;
+            }
+
+            _logger.LogInformation("Rejected message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
+
+            _messagesRejectedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.Value.ToLabel()));
+
+            await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: false, CancellationToken.None);
         }
-
-        QueueMessageType messageType = getMessageTypeResult.Value;
-
-        var messageBody = new byte[basicDeliverEventArgs.Body.Length];
-
-        basicDeliverEventArgs.Body.CopyTo(messageBody);
-
-        MessageAction action = await HandleMessage(messageType, messageBody, CancellationToken.None);
-
-        if (action is MessageAction.Acknowledge)
+        catch (Exception ex)
         {
-            _logger.LogInformation("Successfully processed message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
+            _logger.LogError(ex, "An error occurred consuming a message from queue: {QueueName} message queue.", Options.Name);
 
-            _messagesAcknowledgedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
+            _messagesRejectedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.HasValue ? messageType.Value : "unknown_message_type"));
 
-            await _channel.BasicAckAsync(basicDeliverEventArgs.DeliveryTag, multiple: false, CancellationToken.None);
-
-            return;
+            await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: false, CancellationToken.None);
         }
-
-        if (action is MessageAction.Requeue)
-        {
-            _logger.LogInformation("Requeueing message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
-
-            _messagesRequeuedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
-
-            await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: true, CancellationToken.None);
-
-            return;
-        }
-
-        _logger.LogInformation("Rejected message with MessageId: {MessageId} from queue: {QueueName}", messageId, Options.Name);
-
-        _messagesRejectedCounter.Add(1, new KeyValuePair<string, object?>("type", messageType.ToLabel()));
-
-        await _channel.BasicRejectAsync(basicDeliverEventArgs.DeliveryTag, requeue: false, CancellationToken.None);
     }
 }
