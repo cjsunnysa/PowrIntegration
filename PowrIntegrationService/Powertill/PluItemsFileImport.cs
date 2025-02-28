@@ -1,21 +1,23 @@
-﻿using CsvHelper.Configuration;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using CsvHelper.TypeConversion;
 using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PowrIntegration.Shared;
+using PowrIntegration.Shared.Dtos;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Extensions;
 using PowrIntegrationService.File;
-using PowrIntegrationService.MessageQueue;
 using PowrIntegrationService.Options;
 using System.Collections.Immutable;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 
 namespace PowrIntegrationService.Powertill;
-public sealed class PluItemsFileImport(IOptions<IntegrationServiceOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsFileImport> logger)
+
+public sealed class PluItemsFileImport(IOptions<BackOfficeServiceOptions> options, IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, ILogger<PluItemsFileImport> logger)
     : FileImporter<PluItemDto>(options, "PluCreat.csa", logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
@@ -393,10 +395,57 @@ public sealed class PluItemsFileImport(IOptions<IntegrationServiceOptions> optio
 
     private static void IncrementTimesImportedMetric()
     {
-        var meter = new Meter(PowrIntegrationValues.MetricsMeterName);
+        var meter = new Meter(Metrics.MetricsMeterName);
 
         var counter = meter.CreateCounter<long>("plu_file_import_counter", "times", "Counts number of times PLUs imported from PluCreat file.");
 
         counter.Add(1);
+    }
+}
+
+file sealed class DelphiDateConverter : DefaultTypeConverter
+{
+    public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+    {
+        return
+            string.IsNullOrWhiteSpace(text) || text == "0"
+            ? null
+            : int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int days)
+                ? new DateTime(1899, 12, 31).AddDays(days)
+                : throw new FormatException($"Invalid date format: {text}");
+    }
+}
+
+file sealed class Iso8601DateConverter : DefaultTypeConverter
+{
+    public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+    {
+        return
+            string.IsNullOrWhiteSpace(text) || text == "0"
+            ? null
+            : DateTime.TryParseExact(text, "yyyyMMddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result)
+                ? (object)result
+                : throw new FormatException($"Invalid date format: {text}");
+    }
+}
+
+file sealed class PowertillDateConverter : DefaultTypeConverter
+{
+    public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+    {
+        return
+            string.IsNullOrWhiteSpace(text)
+            ? null
+            : DateTime.TryParseExact(text, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result)
+                ? (object)result
+                : throw new FormatException($"Invalid date format: {text}");
+    }
+}
+
+file sealed class YesNoConverter : DefaultTypeConverter
+{
+    public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+    {
+        return text?.Trim() == "Y";
     }
 }

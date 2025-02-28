@@ -1,4 +1,4 @@
-﻿namespace PowrIntegrationService.Dtos;
+﻿namespace PowrIntegration.Shared.Dtos;
 public sealed record ClassificationCodeDto
 {
     public string? Code { get; init; }

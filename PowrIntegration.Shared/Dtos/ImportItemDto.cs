@@ -1,4 +1,4 @@
-﻿namespace PowrIntegrationService.Dtos;
+﻿namespace PowrIntegration.Shared.Dtos;
 public sealed record ImportItemDto
 {
     public required string TaskCode { get; init; } // Task code related to customs clearance

@@ -1,6 +1,7 @@
 ﻿using FluentResults;
+using Microsoft.Extensions.Logging;
 
-namespace PowrIntegrationService.Extensions;
+namespace PowrIntegration.Shared.Extensions;
 
 public static class ResultExtensions
 {

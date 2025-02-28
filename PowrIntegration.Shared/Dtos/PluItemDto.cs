@@ -1,4 +1,4 @@
-﻿namespace PowrIntegrationService.Dtos;
+﻿namespace PowrIntegration.Shared.Dtos;
 
 public sealed record PluItemDto
 {

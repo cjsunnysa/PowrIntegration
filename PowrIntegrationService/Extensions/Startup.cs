@@ -8,7 +8,6 @@ using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
-using PowrIntegration.Shared;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra;
@@ -132,20 +131,20 @@ internal static class Startup
     {
         static void configureOtlpExporter(OtlpExporterOptions options) => options.Endpoint = new Uri("http://otel-collector:4317");
 
-        static void addPowrIntegration(ResourceBuilder builder) => builder.AddService(PowrIntegrationValues.ApplicationName);
+        static void addPowrIntegration(ResourceBuilder builder) => builder.AddService(Metrics.ApplicationName);
 
         services
             .AddOpenTelemetry()
             .WithMetrics(builder =>
                 builder
-                    .AddMeter(PowrIntegrationValues.MetricsMeterName)
+                    .AddMeter(Metrics.MetricsMeterName)
                     .ConfigureResource(addPowrIntegration)
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation()
                     .AddOtlpExporter(configureOtlpExporter))
             .WithTracing(builder =>
                 builder
-                    .AddSource(PowrIntegrationValues.ApplicationName)
+                    .AddSource(Metrics.ApplicationName)
                     .ConfigureResource(addPowrIntegration)
                     .AddHttpClientInstrumentation()
                     .AddOtlpExporter(configureOtlpExporter))
@@ -164,7 +163,7 @@ internal static class Startup
 
     public static IServiceCollection ConfigurePowrIntegrationOptions(this IServiceCollection services, ConfigurationManager config)
     {
-        services.Configure<IntegrationServiceOptions>(config);
+        services.Configure<BackOfficeServiceOptions>(config);
         services.Configure<RabbitMqOptions>(config.GetSection(RabbitMqOptions.KEY));
         services.Configure<ZraApiOptions>(config.GetSection(ZraApiOptions.KEY));
         services.Configure<PowertillOptions>(config.GetSection(PowertillOptions.KEY));

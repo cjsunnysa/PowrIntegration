@@ -1,7 +1,7 @@
 ﻿using FluentResults;
+using PowrIntegration.Shared.Dtos;
 using PowrIntegration.Shared.MessageQueue;
-using PowrIntegrationService.Dtos;
-using PowrIntegrationService.Options;
+using PowrIntegration.Shared.Options;
 using RabbitMQ.Client;
 using System.Collections.Immutable;
 using System.Text.Json;
@@ -11,7 +11,7 @@ namespace PowrIntegrationService.MessageQueue;
 public sealed class BackOfficeQueuePublisher(
     IChannel channel,
     MessageQueueOptions options,
-    ILogger<BackOfficeQueuePublisher> logger) : RabbitMqPublisher(channel, options, logger)
+    ILogger<BackOfficeQueuePublisher> logger) : RabbitMqPublisher(channel, options, Metrics.MetricsMeterName, logger)
 {
     public async Task<Result> PublishStandardCodes(ImmutableArray<StandardCodeClassDto> dtos, CancellationToken cancellationToken)
     {

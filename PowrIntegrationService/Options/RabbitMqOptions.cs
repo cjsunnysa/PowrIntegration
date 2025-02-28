@@ -1,5 +1,5 @@
 ﻿
-using System.Collections.Immutable;
+using PowrIntegration.Shared.Options;
 
 namespace PowrIntegrationService.Options;
 
@@ -11,18 +11,3 @@ public sealed record RabbitMqOptions
     public required MessageQueueOptions BackOfficeQueue { get; init; }
     public required MessageQueueOptions ApiQueue { get; init; }
 }
-
-public sealed record DeadLetterOptions
-{
-    public required string Name { get; init; }
-    public required string ExchangeName { get; init; }
-    public required string RoutingKey { get; init; }
-}
-
-public sealed record MessageQueueOptions
-{
-    public required string Name { get; init; }
-    public required string Host { get; init; }
-    public required DeadLetterOptions DeadLetterQueue { get; init; }
-}
-

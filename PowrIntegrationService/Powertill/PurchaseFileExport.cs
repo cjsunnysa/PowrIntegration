@@ -1,15 +1,12 @@
 ﻿using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PowrIntegration.Shared.Dtos;
 using PowrIntegration.Shared.MessageQueue;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Dtos;
-using PowrIntegrationService.MessageQueue;
 using PowrIntegrationService.Options;
-using System;
 using System.Collections.Immutable;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json;
 

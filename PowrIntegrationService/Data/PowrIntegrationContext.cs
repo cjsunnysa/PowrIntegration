@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Dtos;
 
 namespace PowrIntegrationService.Data
 {

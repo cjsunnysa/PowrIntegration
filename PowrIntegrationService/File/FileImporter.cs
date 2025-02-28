@@ -1,14 +1,14 @@
 ﻿using FluentResults;
 using Microsoft.Extensions.Options;
-using PowrIntegrationService.Extensions;
+using PowrIntegration.Shared.Extensions;
 using PowrIntegrationService.Options;
 using System.Collections.Immutable;
 
 namespace PowrIntegrationService.File;
 
-public abstract class FileImporter<T>(IOptions<IntegrationServiceOptions> options, string filename, ILogger logger)
+public abstract class FileImporter<T>(IOptions<BackOfficeServiceOptions> options, string filename, ILogger logger)
 {
-    protected readonly IntegrationServiceOptions Options = options.Value;
+    protected readonly BackOfficeServiceOptions Options = options.Value;
     protected readonly string ImportDirectory = options.Value.ImportDirectory;
     protected readonly string FileName = filename;
     private readonly ILogger _logger = logger;

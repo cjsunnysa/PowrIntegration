@@ -7,13 +7,12 @@ using EFCore.BulkExtensions;
 using System.Diagnostics.Metrics;
 using PowrIntegrationService.Data.Entities;
 using PowrIntegrationService.Options;
-using PowrIntegration.Shared;
 using PowrIntegrationService.File;
 
 namespace PowrIntegrationService.Data.Importers;
 
 public sealed class ClassificationCodesFileImport(
-    IOptions<IntegrationServiceOptions> options,
+    IOptions<BackOfficeServiceOptions> options,
     ILogger<ClassificationCodesFileImport> logger,
     IDbContextFactory<PowrIntegrationDbContext> dbContextFactory)
     : FileImporter<ZraClassificationCode>(options, "UNSPSC-Classification-Codes.csv", logger)
@@ -76,10 +75,11 @@ public sealed class ClassificationCodesFileImport(
             var csaRows = csaFile.ReadRecords(
                 hasHeaderRecord: true,
                 shouldSkipRecordMethod: 
-                    args => args.Row[2] == string.Empty || 
-                    args.Row[5] == string.Empty || 
-                    args.Row[8] == string.Empty || 
-                    args.Row[11] == string.Empty,
+                    args => 
+                        args.Row[2] == string.Empty || 
+                        args.Row[5] == string.Empty || 
+                        args.Row[8] == string.Empty || 
+                        args.Row[11] == string.Empty,
                 map: map);
 
             var segments = csaRows.DistinctBy(x => x.Segment).Select(x => new ZraClassificationSegment { Code = x.Segment, Name = x.SegmentTitle, Description = x.SegmentDefinition }).ToImmutableArray();
@@ -106,7 +106,7 @@ public sealed class ClassificationCodesFileImport(
 
     private static void IncrementTimesImportedMetric()
     {
-        var meter = new Meter(PowrIntegrationValues.MetricsMeterName);
+        var meter = new Meter(Metrics.MetricsMeterName);
 
         var counter = meter.CreateCounter<long>("classification_codes_file_import_counter", "times", "Counts number of times UN classification codes imported from file.");
 

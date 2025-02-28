@@ -1,7 +1,6 @@
-﻿using PowrIntegration.Shared.MessageQueue;
+﻿using PowrIntegration.Shared.Dtos;
+using PowrIntegration.Shared.MessageQueue;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Data.Importers;
-using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Zra.ClassificationCodes;
 using PowrIntegrationService.Zra.GetImports;

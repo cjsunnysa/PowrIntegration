@@ -1,21 +1,21 @@
 ﻿using FluentResults;
 using PowrIntegration.Shared.MessageQueue;
+using PowrIntegration.Shared.Options;
 using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Dtos;
-using PowrIntegrationService.Options;
 using RabbitMQ.Client;
-using System.Text.Json;
 
 namespace PowrIntegrationService.MessageQueue;
 
 public sealed class ZraQueuePublisher(IChannel channel, MessageQueueOptions options, ILogger<ZraQueuePublisher> logger) 
-    : RabbitMqPublisher(channel, options, logger)
+    : RabbitMqPublisher(channel, options, Metrics.MetricsMeterName, logger)
 {
     public async Task<Result> PublishOutboxItems(IEnumerable<OutboxItem> records, CancellationToken cancellationToken)
     {
         try
         {
-            await BatchPublish(records, cancellationToken);
+            var groups = records.GroupBy(x => x.MessageType);
+            
+            await BatchPublish(groups, cancellationToken);
 
             return Result.Ok();
         }

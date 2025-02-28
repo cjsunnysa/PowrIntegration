@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.Options;
+using PowrIntegration.Shared.Dtos;
+using PowrIntegration.Shared.Extensions;
 using PowrIntegrationService.Data;
 using PowrIntegrationService.Data.Exporters;
 using PowrIntegrationService.Data.Importers;
-using PowrIntegrationService.Dtos;
-using PowrIntegrationService.Extensions;
 using PowrIntegrationService.MessageQueue;
 using PowrIntegrationService.Options;
 using PowrIntegrationService.Powertill;
@@ -16,7 +15,7 @@ namespace PowrIntegrationService;
 
 public class Worker : BackgroundService
 {
-    private readonly IntegrationServiceOptions _serviceOptions;
+    private readonly BackOfficeServiceOptions _serviceOptions;
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory;
     private readonly RabbitMqFactory _messageQueueFactory;
     private readonly Outbox _outbox;
@@ -26,7 +25,7 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
 
     public Worker(
-        IOptions<IntegrationServiceOptions> serviceOptions,
+        IOptions<BackOfficeServiceOptions> serviceOptions,
         IDbContextFactory<PowrIntegrationDbContext> dbContextFactory,
         RabbitMqFactory messageQueueFactory,
         ZraService zraService,

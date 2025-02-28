@@ -1,13 +1,12 @@
 ﻿using EFCore.BulkExtensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
+using PowrIntegration.Shared.Dtos;
+using PowrIntegration.Shared.Extensions;
 using PowrIntegration.Shared.MessageQueue;
+using PowrIntegration.Shared.Options;
 using PowrIntegrationService.Data;
-using PowrIntegrationService.Data.Entities;
-using PowrIntegrationService.Data.Importers;
-using PowrIntegrationService.Dtos;
 using PowrIntegrationService.Extensions;
-using PowrIntegrationService.Options;
 using PowrIntegrationService.Powertill;
 using RabbitMQ.Client;
 using System.Collections.Immutable;
@@ -21,7 +20,7 @@ public sealed class BackOfficeQueueConsumer(
     MessageQueueOptions options,
     IDbContextFactory<PowrIntegrationDbContext> dbContextFactory,
     PurchaseFileExport purchaseExport,
-    ILogger<BackOfficeQueueConsumer> logger) : RabbitMqConsumer(channel, options, logger)
+    ILogger<BackOfficeQueueConsumer> logger) : RabbitMqConsumer(channel, options, Metrics.MetricsMeterName, logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
     private readonly PurchaseFileExport _purchaseExport = purchaseExport;

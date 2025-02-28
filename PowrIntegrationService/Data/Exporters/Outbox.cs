@@ -1,6 +1,6 @@
 ﻿using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
-using PowrIntegrationService.Extensions;
+using PowrIntegration.Shared.Extensions;
 using PowrIntegrationService.MessageQueue;
 using System.Collections.Immutable;
 

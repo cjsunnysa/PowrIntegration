@@ -1,12 +1,12 @@
 ﻿using FluentResults;
 using System.Text.Json;
-using PowrIntegrationService.Options;
 using PowrIntegrationService.Errors;
-using PowrIntegrationService.Extensions;
 using PowrIntegrationService.Zra;
-using PowrIntegrationService.Dtos;
 using RabbitMQ.Client;
 using PowrIntegration.Shared.MessageQueue;
+using PowrIntegration.Shared.Extensions;
+using PowrIntegration.Shared.Options;
+using PowrIntegration.Shared.Dtos;
 
 namespace PowrIntegrationService.MessageQueue;
 
@@ -14,7 +14,7 @@ public sealed class ZraQueueConsumer(
     IChannel channel,
     MessageQueueOptions options,
     ZraService zraService,
-    ILogger<ZraQueueConsumer> logger) : RabbitMqConsumer(channel, options, logger)
+    ILogger<ZraQueueConsumer> logger) : RabbitMqConsumer(channel, options, Metrics.MetricsMeterName, logger)
 {
     private readonly ZraService _zraService = zraService;
     private readonly ILogger<ZraQueueConsumer> _logger = logger;
