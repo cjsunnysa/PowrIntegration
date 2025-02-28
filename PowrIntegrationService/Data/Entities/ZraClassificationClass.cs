@@ -6,6 +6,6 @@ public sealed record ZraClassificationClass
     public required string Name { get; set; }
     public string? Description { get; set; }
     public required long FamilyCode { get; set; }
-    public ZraClassificationFamily? Family { get; init; }
+    public ZraClassificationFamily? Family { get; set; }
     public List<ZraClassificationCode> Codes { get; init; } = [];
 }

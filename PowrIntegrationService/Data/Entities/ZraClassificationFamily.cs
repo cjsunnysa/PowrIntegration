@@ -6,6 +6,6 @@ public sealed record ZraClassificationFamily
     public required string Name { get; set; }
     public string? Description { get; set; }
     public required long SegmentCode { get; set; }
-    public ZraClassificationSegment? Segment { get; init; }
+    public ZraClassificationSegment? Segment { get; set; }
     public List<ZraClassificationClass> Classes { get; init; } = [];
 }

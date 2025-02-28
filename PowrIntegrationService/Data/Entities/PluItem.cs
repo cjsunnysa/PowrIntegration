@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace PowrIntegrationService.Data.Entities;
 
-namespace PowrIntegrationService.Data.Entities;
 public sealed record PluItem
 {
     public required long PluNumber { get; init; }

@@ -9,5 +9,5 @@ public sealed record ZraClassificationCode
     public bool IsMajorTarget { get; set; }     // Whether it is a Major Target (Y/N)
     public bool ShouldUse { get; set; }       // Used/Unused Flag
     public long? ClassCode { get; set; }
-    public ZraClassificationClass? Class { get; init; }
+    public ZraClassificationClass? Class { get; set; }
 }
