@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="container-files\loki-config.yaml" />
+    <None Include="docker-compose.swarm.yml" />
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include="container-files\otel-collector-config.yaml" />

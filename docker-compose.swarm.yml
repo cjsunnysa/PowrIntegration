@@ -1,0 +1,30 @@
+services:
+    otel-collector:
+        deploy:
+            mode: global
+
+    prometheus:
+        deploy:
+            mode: global
+
+    loki:
+        deploy:
+            mode: global
+
+    jaeger:
+        deploy:
+            mode: global
+
+    grafana:
+        deploy:
+            mode: global
+
+    rabbitmq:
+        deploy:
+            mode: global
+
+    powrintegration:
+        deploy:
+            mode: replicated
+            replicas: 1
+
