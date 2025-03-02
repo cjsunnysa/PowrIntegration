@@ -8,10 +8,10 @@
     <ProjectGuid>2c5d3338-5275-45be-8b25-a5f5c6adf41e</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="container-files\loki-config.yaml" />
     <None Include="docker-compose.swarm.yml" />
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="container-files\loki-config.yaml" />
     <None Include="container-files\otel-collector-config.yaml" />
     <None Include="container-files\prometheus.yml" />
   </ItemGroup>

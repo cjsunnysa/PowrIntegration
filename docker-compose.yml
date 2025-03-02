@@ -76,11 +76,29 @@ services:
       timeout: 10s
       retries: 5
 
-  powrintegration:
-    image: ${DOCKER_REGISTRY-}powrintegration
-    container_name: powrintegration
+  powrintegration-backoffice:
+    image: ${DOCKER_REGISTRY-}powrintegration-backoffice
+    container_name: powrintegration-backoffice
     build:
-      context: PowrIntegrationService
+      context: PowrIntegration.PowertillService
+      dockerfile: Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+      otel-collector:
+        condition: service_started
+    volumes:
+      - c:\\PowrIntegration:/usr/local/powrintegration
+      - c:\\PowerTill8:/export
+
+  powrintegration-zra:
+    image: ${DOCKER_REGISTRY-}powrintegration-zra
+    container_name: powrintegration-zra
+    build:
+      context: PowrIntegration.ZraService
       dockerfile: Dockerfile
     environment:
       DOTNET_ENVIRONMENT: Development
@@ -91,10 +109,6 @@ services:
         restart: true
       otel-collector:
         condition: service_started
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - c:\\PowrIntegration:/usr/local/powrintegration
-      - c:\\PowerTill8:/export
 
 volumes:
   rabbitmq_data:
