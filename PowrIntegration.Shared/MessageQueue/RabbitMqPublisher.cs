@@ -108,7 +108,7 @@ public abstract class RabbitMqPublisher
             Priority = (byte)(messageType == QueueMessageType.ItemInsert ? 2 : 1),
             Headers = new Dictionary<string, object?>
             {
-                { "Type", Enum.GetName(messageType) },
+                { MessageQueueHeaderKey.Type, Enum.GetName(messageType) },
             }
         };
     }

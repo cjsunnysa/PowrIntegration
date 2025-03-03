@@ -378,7 +378,7 @@ public sealed class PluItemsFileImport(IOptions<BackOfficeServiceOptions> option
                     })
                     .ToImmutableArray();
 
-            var outboxItems = plus.MapToOutboxItems();
+            var outboxItems = plus.ToOutboxItems();
 
             var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 

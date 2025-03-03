@@ -5,15 +5,16 @@ using System.Text;
 using System.Text.Json;
 
 namespace PowrIntegration.Shared.MessageQueue;
+
 public static class RabbitMqHelpers
 {
     public static Result<QueueMessageType> GetQueueMessageType(this BasicDeliverEventArgs args)
     {
         object? typeObject = null;
 
-        if (!args.BasicProperties.Headers?.TryGetValue("Type", out typeObject) ?? false)
+        if (!args.BasicProperties.Headers?.TryGetValue(MessageQueueHeaderKey.Type, out typeObject) ?? false)
         {
-            return Result.Fail("Invalid message found in the Sync queue. Header 'Type' is missing.");
+            return Result.Fail($"Invalid message found in the Sync queue. Header '{MessageQueueHeaderKey.Type}' is missing.");
         }
 
         if (typeObject is not byte[] typeBytes)
@@ -37,7 +38,7 @@ public static class RabbitMqHelpers
 
         var serializedString = Encoding.UTF8.GetString(stream.ToArray());
 
-        return Result.Fail($"Invalid message found in the Sync queue. Header 'Type' is not a valid message type. message: {serializedString}");
+        return Result.Fail($"Invalid message found in the Sync queue. Header '{MessageQueueHeaderKey.Type}' is not a valid message type. message: {serializedString}");
     }
 
     public static string ToLabel(this QueueMessageType messageType)

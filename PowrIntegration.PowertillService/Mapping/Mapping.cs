@@ -57,7 +57,7 @@ public static class Mapping
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<OutboxItem> MapToOutboxItems(this ImmutableArray<PluItem> records)
+    public static ImmutableArray<OutboxItem> ToOutboxItems(this ImmutableArray<PluItem> records)
     {
         return
             records
@@ -67,5 +67,22 @@ public static class Mapping
                     MessageBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(x))
                 })
                 .ToImmutableArray();
+    }
+
+    public static PluItem ToEntity(this PluItemDto dto)
+    {
+        return new PluItem
+        {
+            PluNumber = dto.PluNumber,
+            PluDescription = dto.PluDescription,
+            SizeDescription = dto.SizeDescription,
+            SalesGroup = dto.SalesGroup,
+            Flags = dto.Flags,
+            SellingPrice1 = dto.SellingPrice1,
+            Supplier1StockCode = dto.Supplier1StockCode,
+            Supplier2StockCode = dto.Supplier2StockCode,
+            DateTimeCreated = dto.DateTimeCreated,
+            DateTimeEdited = dto.DateTimeEdited
+        };
     }
 }

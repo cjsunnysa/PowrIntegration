@@ -1,7 +1,31 @@
-﻿namespace PowrIntegration.Shared.Dtos;
+﻿using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace PowrIntegration.Shared.Dtos;
 
 public sealed record PluItemDto
 {
+    public sealed class DateTimePowertillConverter : JsonConverter<DateTime>
+    {
+        private readonly string _format = @"dd/MM/yyyy HH:mm:ss";
+
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var value = reader.GetString();
+
+            return 
+                value == "30/12/1899" 
+                ? DateTime.MinValue 
+                : DateTime.ParseExact(value ?? "", _format, CultureInfo.InvariantCulture);
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value);
+        }
+    }
+
     public required long PluNumber { get; init; }
     public string? PluDescription { get; init; }
     public string? SizeDescription { get; init; }

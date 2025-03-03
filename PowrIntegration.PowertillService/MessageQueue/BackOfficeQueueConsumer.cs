@@ -2,6 +2,7 @@
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using PowrIntegration.PowertillService.Data;
+using PowrIntegration.PowertillService.Data.Entities;
 using PowrIntegration.PowertillService.Mapping;
 using PowrIntegration.PowertillService.Powertill;
 using PowrIntegration.Shared.Dtos;
@@ -11,6 +12,7 @@ using PowrIntegration.Shared.Observability;
 using PowrIntegration.Shared.Options;
 using RabbitMQ.Client;
 using System.Collections.Immutable;
+using System.Text;
 using System.Text.Json;
 
 namespace PowrIntegration.PowertillService.MessageQueue;
@@ -26,7 +28,11 @@ internal sealed class BackOfficeQueueConsumer(
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
     private readonly PurchaseFileExport _purchaseExport = purchaseExport;
     private readonly ILogger<BackOfficeQueueConsumer> _logger = logger;
-
+    private readonly JsonSerializerOptions _pluSerializerOptions = new JsonSerializerOptions
+    {
+        Converters = { new PluItemDto.DateTimePowertillConverter() }
+    };
+    
     protected async override Task<MessageAction> HandleMessage(QueueMessageType messageType, ReadOnlyMemory<byte> messageBody, CancellationToken cancellationToken)
     {
         var result = messageType switch
@@ -35,7 +41,9 @@ internal sealed class BackOfficeQueueConsumer(
             QueueMessageType.ZraClassificationCodes => await HandleClassificationCodeMessage(messageBody, cancellationToken),
             QueueMessageType.ZraImportItems => await HandleZraImportItemsMessage(messageBody, cancellationToken),
             QueueMessageType.Purchase => await HandlePurchaseMessage(messageBody, cancellationToken),
-            _ => Result.Fail($"Unkown message type: {(int)messageType}.")
+            QueueMessageType.ItemInsert => await HandleItemInsertMessage(messageBody, cancellationToken),
+            QueueMessageType.ItemUpdate => await HandleItemUpdateMessage(messageBody, cancellationToken),
+            _ => Result.Fail($"Unkown message type: {messageType}.")
         };
 
         result.LogErrors(_logger);
@@ -224,9 +232,90 @@ internal sealed class BackOfficeQueueConsumer(
 
         if (dto is null)
         {
-            return Result.Fail($"Cannot deserialize message. Message body is not a valid purchase. Body: {stream.ToArray()}");
+            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+
+            return Result.Fail($"Cannot deserialize message. Message body is not a valid purchase. Body: {bodyString}");
         }
 
         return await _purchaseExport.Execute(dto, cancellationToken);
+    }
+
+    private async Task<Result> HandleItemInsertMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(body.ToArray());
+
+        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(stream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
+
+        if (dto is null)
+        {
+            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+
+            return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
+        }
+
+        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        var entity = dto.ToEntity();
+
+        await dbContext.PluItems.AddAsync(entity, cancellationToken);
+        
+        var outboxRecord = new OutboxItem
+        {
+            MessageType = QueueMessageType.ItemInsert,
+            MessageBody = body.ToArray()
+        };
+
+        await dbContext.OutboxItems.AddAsync(outboxRecord, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
+    }
+
+    private async Task<Result> HandleItemUpdateMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(body.ToArray());
+
+        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(stream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
+
+        if (dto is null)
+        {
+            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+
+            return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
+        }
+
+        using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        PluItem? plu = await dbContext.PluItems.FindAsync([dto.PluNumber], cancellationToken);
+
+        if (plu is null)
+        {
+            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+
+            return Result.Fail($"Cannot find item for PluNumber: {dto.PluNumber}. Body: {bodyString}");
+        }
+
+        plu.PluDescription = dto.PluDescription;
+        plu.SizeDescription = dto.SizeDescription;
+        plu.SalesGroup = dto.SalesGroup;
+        plu.SellingPrice1 = dto.SellingPrice1;
+        plu.Flags = dto.Flags;
+        plu.Supplier1StockCode = dto.Supplier1StockCode;
+        plu.Supplier2StockCode = dto.Supplier2StockCode;
+        plu.DateTimeCreated = dto.DateTimeCreated;
+        plu.DateTimeEdited = dto.DateTimeEdited;
+
+        var outboxRecord = new OutboxItem
+        {
+            MessageType = QueueMessageType.ItemUpdate,
+            MessageBody = body.ToArray()
+        };
+
+        await dbContext.OutboxItems.AddAsync(outboxRecord, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
     }
 }

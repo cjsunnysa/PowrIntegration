@@ -1,5 +1,10 @@
 ﻿namespace PowrIntegration.Shared.MessageQueue;
 
+public static class MessageQueueHeaderKey
+{
+    public static string Type = "type";
+}
+
 public enum QueueMessageType
 {
     Sale = 1,
