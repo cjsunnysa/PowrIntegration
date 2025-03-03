@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowrIntegration.PowertillService", "PowrIntegration.PowertillService\PowrIntegration.PowertillService.csproj", "{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowrIntegration.BackOfficeService", "PowrIntegration.BackOfficeService\PowrIntegration.BackOfficeService.csproj", "{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowrIntegration.ZraService", "PowrIntegration.ZraService\PowrIntegration.ZraService.csproj", "{22873DA1-5953-4C63-9362-3B55D22421C6}"
 EndProject
@@ -17,14 +17,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C5D3338-5275-45BE-8B25-A5F5C6ADF41E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24AB3307-4B6F-49AE-BDBE-D93D94730CBA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{22873DA1-5953-4C63-9362-3B55D22421C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{22873DA1-5953-4C63-9362-3B55D22421C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22873DA1-5953-4C63-9362-3B55D22421C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
