@@ -29,3 +29,5 @@ jobs:
         run: |
           docker build -t ${{ matrix.service.tag }}:${{ github.sha }} -f ${{ matrix.service.dockerfile }} .
           docker push ${{ matrix.service.tag }}:${{ github.sha }}
+          docker build -t ${{ matrix.service.tag }}:latest -f ${{ matrix.service.dockerfile }} .
+          docker push ${{ matrix.service.tag }}:latest
