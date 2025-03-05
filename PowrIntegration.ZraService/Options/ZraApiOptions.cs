@@ -10,7 +10,7 @@ public sealed record ZraApiOptions
     public required string DeviceSerialNumber { get; init; }
     public required bool ShouldInitializeDevice { get; init; }
     public required string RegisterDeviceFileName { get; init; }
-    public required TaxMapping[] TaxTypeMappings { get; init; }
+    public required TaxMapping[] TaxMappings { get; init; }
 }
 
 public sealed record TaxMapping

@@ -242,13 +242,13 @@ internal sealed class BackOfficeQueueConsumer(
 
     private async Task<Result> HandleItemInsertMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
-        using var stream = new MemoryStream(body.ToArray());
+        using var desrializeStream = new MemoryStream(body.ToArray());
 
-        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(stream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
+        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(desrializeStream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
 
         if (dto is null)
         {
-            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+            var bodyString = Encoding.UTF8.GetString(desrializeStream.ToArray());
 
             return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
         }
@@ -259,10 +259,14 @@ internal sealed class BackOfficeQueueConsumer(
 
         await dbContext.PluItems.AddAsync(entity, cancellationToken);
 
+        using var serializeStream = new MemoryStream();
+
+        await JsonSerializer.SerializeAsync(serializeStream, dto, cancellationToken: cancellationToken);
+
         var outboxRecord = new OutboxItem
         {
             MessageType = QueueMessageType.ItemInsert,
-            MessageBody = body.ToArray()
+            MessageBody = serializeStream.ToArray()
         };
 
         await dbContext.OutboxItems.AddAsync(outboxRecord, cancellationToken);
@@ -274,13 +278,13 @@ internal sealed class BackOfficeQueueConsumer(
 
     private async Task<Result> HandleItemUpdateMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
-        using var stream = new MemoryStream(body.ToArray());
+        using var deserialzeStream = new MemoryStream(body.ToArray());
 
-        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(stream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
+        var dto = await JsonSerializer.DeserializeAsync<PluItemDto>(deserialzeStream, options: _pluSerializerOptions, cancellationToken: cancellationToken);
 
         if (dto is null)
         {
-            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+            var bodyString = Encoding.UTF8.GetString(deserialzeStream.ToArray());
 
             return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
         }
@@ -291,7 +295,7 @@ internal sealed class BackOfficeQueueConsumer(
 
         if (plu is null)
         {
-            var bodyString = Encoding.UTF8.GetString(stream.ToArray());
+            var bodyString = Encoding.UTF8.GetString(deserialzeStream.ToArray());
 
             return Result.Fail($"Cannot find item for PluNumber: {dto.PluNumber}. Body: {bodyString}");
         }
@@ -306,10 +310,14 @@ internal sealed class BackOfficeQueueConsumer(
         plu.DateTimeCreated = dto.DateTimeCreated;
         plu.DateTimeEdited = dto.DateTimeEdited;
 
+        using var serializeStram = new MemoryStream();
+
+        await JsonSerializer.SerializeAsync(serializeStram, dto, cancellationToken: cancellationToken);
+
         var outboxRecord = new OutboxItem
         {
             MessageType = QueueMessageType.ItemUpdate,
-            MessageBody = body.ToArray()
+            MessageBody = serializeStram.ToArray()
         };
 
         await dbContext.OutboxItems.AddAsync(outboxRecord, cancellationToken);

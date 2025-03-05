@@ -211,7 +211,7 @@ public class ZraRestService(HttpClient httpClient, IOptions<ZraApiOptions> apiOp
     {
         try
         {
-            _logger.LogInformation("Sending Update Item request to the ZRA API.");
+            _logger.LogInformation("Sending Update Item request to the ZRA API. PluNumber: {PluNumber}", dto.PluNumber);
 
             var request = dto.ToUpdateItemRequest(_apiOptions);
 

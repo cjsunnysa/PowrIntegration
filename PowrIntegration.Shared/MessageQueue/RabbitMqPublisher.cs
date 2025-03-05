@@ -60,7 +60,7 @@ public abstract class RabbitMqPublisher
         }
     }
 
-    protected async Task BatchPublish<T>(IEnumerable<IGrouping<QueueMessageType, T>> groups, CancellationToken cancellationToken)
+    protected async Task BatchPublish(IEnumerable<IGrouping<QueueMessageType, byte[]>> groups, CancellationToken cancellationToken)
     {
         await EnsureQueueCreated(cancellationToken);
 
@@ -70,7 +70,7 @@ public abstract class RabbitMqPublisher
         {
             foreach (var group in groups)
             {
-                await Publish(group.Key, group, cancellationToken);
+                await Publish(group.Key, bodyRecords: group, cancellationToken);
             }
 
             await _channel.TxCommitAsync(cancellationToken);
@@ -82,6 +82,18 @@ public abstract class RabbitMqPublisher
         finally
         {
             await _channel.TxRollbackAsync(cancellationToken);
+        }
+    }
+
+    private async Task Publish(QueueMessageType messageType, IEnumerable<byte[]> bodyRecords, CancellationToken cancellationToken)
+    {
+        foreach (var record in bodyRecords)
+        {
+            BasicProperties properties = CreateBasicMessageProperties(messageType);
+
+            using var stream = new MemoryStream();
+
+            await _channel.BasicPublishAsync(exchange: "", routingKey: Options.Name, mandatory: true, basicProperties: properties, body: record, cancellationToken);
         }
     }
 

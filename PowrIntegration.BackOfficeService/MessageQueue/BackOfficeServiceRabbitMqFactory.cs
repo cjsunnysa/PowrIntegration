@@ -8,11 +8,11 @@ using PowrIntegration.Shared.Options;
 
 namespace PowrIntegration.BackOfficeService.MessageQueue;
 
-internal class PowertillServiceRabbitMqFactory(
+internal class BackOfficeServiceRabbitMqFactory(
     IOptions<RabbitMqOptions> options,
     IServiceProvider services,
     IMetrics metrics,
-    ILogger<PowertillServiceRabbitMqFactory> logger)
+    ILogger<BackOfficeServiceRabbitMqFactory> logger)
     : RabbitMqFactory<ZraQueuePublisher, BackOfficeQueueConsumer>(options, logger)
 {
     private readonly IServiceProvider _services = services;

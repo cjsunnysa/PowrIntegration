@@ -10,7 +10,7 @@ namespace PowrIntegration.BackOfficeService;
 
 internal sealed class Worker(
     IOptions<BackOfficeServiceOptions> serviceOptions,
-    PowertillServiceRabbitMqFactory messageQueueFactory,
+    BackOfficeServiceRabbitMqFactory messageQueueFactory,
     PluItemsFileImport pluItemsImport,
     ClassificationCodesFileImport classificationImport,
     Outbox outbox,
@@ -18,7 +18,7 @@ internal sealed class Worker(
     ILogger<Worker> logger) : BackgroundService
 {
     private readonly BackOfficeServiceOptions _serviceOptions = serviceOptions.Value;
-    private readonly PowertillServiceRabbitMqFactory _messageQueueFactory = messageQueueFactory;
+    private readonly BackOfficeServiceRabbitMqFactory _messageQueueFactory = messageQueueFactory;
     private readonly Outbox _outbox = outbox;
     private readonly IMetrics _metrics = metrics;
     private readonly PluItemsFileImport _pluItemsFileImport = pluItemsImport;
@@ -27,10 +27,6 @@ internal sealed class Worker(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await _classificationFileImport.Execute(cancellationToken);
-
-        await _pluItemsFileImport.Execute(cancellationToken);
-
         var queueConsumer = await _messageQueueFactory.CreateConsumer(cancellationToken);
 
         await queueConsumer.Start(cancellationToken);
@@ -45,6 +41,10 @@ internal sealed class Worker(
                 {
                     _logger.LogInformation("{ApplicationName} service worker running at: {time}", _metrics.ApplicationName, DateTimeOffset.Now);
                 }
+
+                await _classificationFileImport.Execute(cancellationToken);
+
+                await _pluItemsFileImport.Execute(cancellationToken);
 
                 await PublishOutboxItems(cancellationToken);
 

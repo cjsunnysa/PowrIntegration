@@ -5,10 +5,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using EFCore.BulkExtensions;
 using System.Diagnostics.Metrics;
-using PowrIntegration.PowertillService.Data.Entities;
 using PowrIntegration.Shared.Observability;
 using PowrIntegration.BackOfficeService.Data.Entities;
-using PowrIntegration.BackOfficeService.Data;
 using PowrIntegration.BackOfficeService.File;
 using PowrIntegration.BackOfficeService.Options;
 

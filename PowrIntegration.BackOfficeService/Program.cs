@@ -3,8 +3,8 @@ using PowrIntegration.BackOfficeService;
 using PowrIntegration.BackOfficeService.Data.Exporters;
 using PowrIntegration.BackOfficeService.Data.Importers;
 using PowrIntegration.BackOfficeService.MessageQueue;
+using PowrIntegration.BackOfficeService.Observability;
 using PowrIntegration.BackOfficeService.Powertill;
-using PowrIntegration.PowertillService.Observability;
 using PowrIntegration.Shared;
 using PowrIntegration.Shared.Observability;
 
@@ -20,7 +20,7 @@ builder.Services.ConfigureOpenTelemetry(metrics);
 builder.Services.ConfigureEntityFramework(databaseConnectionString);
 builder.Services.ConfigureServiceOptions(builder.Configuration);
 builder.Services.AddSingleton<IMetrics>(metrics);
-builder.Services.AddSingleton<PowertillServiceRabbitMqFactory>();
+builder.Services.AddSingleton<BackOfficeServiceRabbitMqFactory>();
 builder.Services.AddSingleton<PluItemsFileImport>();
 builder.Services.AddSingleton<ClassificationCodesFileImport>();
 builder.Services.AddSingleton<PurchaseFileExport>();

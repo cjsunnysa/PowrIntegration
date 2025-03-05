@@ -4,6 +4,6 @@ namespace PowrIntegration.BackOfficeService.Observability;
 
 public class MetricsVariables : IMetrics
 {
-    public string ApplicationName => "PowrIntegration.PowertillService";
+    public string ApplicationName => "PowrIntegration.BackOfficeService";
     public string MetricsMeterName => $"{ApplicationName}.Metrics";
 }

@@ -7,10 +7,10 @@ using System.Collections.Immutable;
 
 namespace PowrIntegration.BackOfficeService.Data.Exporters;
 
-internal sealed class Outbox(IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, PowertillServiceRabbitMqFactory messageQueueFactory, ILogger<Outbox> logger)
+internal sealed class Outbox(IDbContextFactory<PowrIntegrationDbContext> dbContextFactory, BackOfficeServiceRabbitMqFactory messageQueueFactory, ILogger<Outbox> logger)
 {
     private readonly IDbContextFactory<PowrIntegrationDbContext> _dbContextFactory = dbContextFactory;
-    private readonly PowertillServiceRabbitMqFactory _messageQueueFactory = messageQueueFactory;
+    private readonly BackOfficeServiceRabbitMqFactory _messageQueueFactory = messageQueueFactory;
     private readonly ILogger<Outbox> _logger = logger;
 
     public async Task PublishToQueue(CancellationToken cancellationToken)

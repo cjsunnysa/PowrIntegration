@@ -14,7 +14,7 @@ public sealed class ZraQueuePublisher(IChannel channel, MessageQueueOptions opti
     {
         try
         {
-            var groups = records.GroupBy(x => x.MessageType);
+            IEnumerable<IGrouping<QueueMessageType, byte[]>> groups = records.Select(x => (x.MessageType, x.MessageBody)).GroupBy(x => x.MessageType, x => x.MessageBody);
 
             await BatchPublish(groups, cancellationToken);
 
