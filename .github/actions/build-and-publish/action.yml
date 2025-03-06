@@ -7,7 +7,7 @@ inputs:
   password:
     description: 'The secret password for DockerHub login'
     required true
-  serviceName:
+  servicename:
     description: 'The name of the service for display'
     required: true
   dockerfile:
@@ -25,7 +25,7 @@ runs:
     - name: Log in to Docker Hub
       run: echo '${{ inputs.password }}' | docker login -u "${{ inputs.username }}" --password-stdin
 
-    - name: Build and Push ${{ inputs.serviceName }} Image
+    - name: Build and Push ${{ inputs.servicename }} Image
       run: |
         docker build -t ${{ inputs.tag }}:${{ inputs.version }} -f ${{ inputs.dockerfile }} .
         docker push ${{ inputs.tag }}:${{ inputs.version }}
