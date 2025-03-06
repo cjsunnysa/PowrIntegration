@@ -25,6 +25,8 @@ jobs:
           - 'latest'
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
       - uses: './github/actions/build-and-publish.yml'
         with:
           serviceName: ${{ matrix.service.name }}
