@@ -1,0 +1,35 @@
+name: Build and Push Docker Release Image
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: 
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: "BackOffice"
+            dockerfile: "PowrIntegration.BackOfficeService/Dockerfile"
+            tag: "cjsunnysa/powrintegration-backoffice"
+          - name: "Zra"
+            dockerfile: "PowrIntegration.ZraService/Dockerfile"
+            tag: "cjsunnysa/powrintegration-zra"
+        version:
+          - ${{ github.sha }}
+          - 'latest'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - uses: './github/actions/build-and-publish.yml'
+        with:
+          serviceName: ${{ matrix.service.name }}
+          dockerfile: ${{ matrix.service.dockerfile }}
+          tag: ${{ matrix.service.tag }}
+          version: ${{ matrix.version }}

@@ -1,12 +1,12 @@
-name: Build and Push Docker Images
+name: Build and Push Docker Dev Image
 
 on:
   push:
     branches:
-      - master
+      - dev
   pull_request: 
     branches:
-      - master
+      - dev
 
 jobs:
   build-and-push:
@@ -21,8 +21,7 @@ jobs:
             dockerfile: "PowrIntegration.ZraService/Dockerfile"
             tag: "cjsunnysa/powrintegration-zra"
         version:
-          - ${{ github.sha }}
-          - 'latest'
+          - 'dev'
 
     steps:
       - name: Checkout Code
