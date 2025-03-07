@@ -9,10 +9,10 @@ jobs:
   build-backoffice:
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
-      image_name: "powerintegration-backofficeservice"
+      image_name: "powrintegration-backoffice"
       tag_prefix: "dev"
       context: "."
-      dockerfile: "./PowerIntegration.BackOfficeService/Dockerfile"
+      dockerfile: "./PowrIntegration.BackOfficeService/Dockerfile"
     secrets:
       dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
@@ -20,10 +20,10 @@ jobs:
   build-zra:
     uses: ./.github/workflows/docker-build-and-push.yml
     with:
-      image_name: "powerintegration-zraservice"
+      image_name: "powrintegration-zra"
       tag_prefix: "dev"
       context: "."
-      dockerfile: "./PowerIntegration.ZraService/Dockerfile"
+      dockerfile: "./PowrIntegration.ZraService/Dockerfile"
     secrets:
       dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
