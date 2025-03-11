@@ -23,7 +23,14 @@ services:
         deploy:
             mode: global
 
-    powrintegration:
+    powrintegration-backoffice:
+        image: cjsunnysa/powrintegration-backoffice:release-latest
+        deploy:
+            mode: replicated
+            replicas: 1
+
+    powrintegration-zra:
+        image: cjsunnysa/powrintegration-zra:release-latest
         deploy:
             mode: replicated
             replicas: 1
