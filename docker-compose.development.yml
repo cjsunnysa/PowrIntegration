@@ -1,0 +1,33 @@
+services:
+  powrintegration-backoffice:
+    image: powrintegration-backoffice:dev
+    build:
+      context: .
+      dockerfile: ./PowrIntegration.BackOfficeService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Debug
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+      otel-collector:
+        condition: service_started
+    environment:
+      DOTNET_ENVIRONMENT: Development
+
+  powrintegration-zra:
+    image: powrintegration-zra:dev
+    build:
+      context: .
+      dockerfile: ./PowrIntegration.ZraService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Debug
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+      otel-collector:
+        condition: service_started
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ZraApi__BaseUrl: http://host.docker.internal:8080/sandboxvdsc/

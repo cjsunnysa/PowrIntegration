@@ -1,13 +1,17 @@
 {
   "profiles": {
-    "Docker Compose": {
+    "Compose Launch": {
       "commandName": "DockerCompose",
-      "environmentVariables": {
-        "COMPOSE_PROJECT_NAME": "powrintegration-compose"
-      },
       "commandVersion": "1.0",
       "serviceActions": {
-        "powrintegration": "StartDebugging"
+        "grafana": "StartWithoutDebugging",
+        "jaeger": "StartWithoutDebugging",
+        "loki": "StartWithoutDebugging",
+        "otel-collector": "StartWithoutDebugging",
+        "powrintegration-backoffice": "StartDebugging",
+        "powrintegration-zra": "StartDebugging",
+        "prometheus": "StartWithoutDebugging",
+        "rabbitmq": "StartWithoutDebugging"
       }
     }
   }

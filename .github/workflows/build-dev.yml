@@ -1,0 +1,29 @@
+name: Build and Publish Dev Docker Images
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-backoffice:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      image_name: "powrintegration-backoffice"
+      tag_prefix: "dev"
+      context: "."
+      dockerfile: "./PowrIntegration.BackOfficeService/Dockerfile"
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
+
+  build-zra:
+    uses: ./.github/workflows/docker-build-and-push.yml
+    with:
+      image_name: "powrintegration-zra"
+      tag_prefix: "dev"
+      context: "."
+      dockerfile: "./PowrIntegration.ZraService/Dockerfile"
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}

@@ -77,38 +77,20 @@ services:
       retries: 5
 
   powrintegration-backoffice:
-    image: ${DOCKER_REGISTRY-}powrintegration-backoffice
+    image: powrintegration-backoffice
     container_name: powrintegration-backoffice
-    build:
-      context: .
-      dockerfile: ./PowrIntegration.BackOfficeService/Dockerfile
     environment:
-      DOTNET_ENVIRONMENT: Development
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-        restart: true
-      otel-collector:
-        condition: service_started
+      DOTNET_ENVIRONMENT: Release
     volumes:
       - C:\\PowrIntegration:/usr/local/powrintegration
       - C:\\PowerTill8:/export
 
   powrintegration-zra:
-    image: ${DOCKER_REGISTRY-}powrintegration-zra
+    image: powrintegration-zra
     container_name: powrintegration-zra
-    build:
-      context: .
-      dockerfile: ./PowrIntegration.ZraService/Dockerfile
     environment:
-      DOTNET_ENVIRONMENT: Development
-      ZraApi__BaseUrl: http://host.docker.internal:8080/sandboxvdsc/
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-        restart: true
-      otel-collector:
-        condition: service_started
+      DOTNET_ENVIRONMENT: Release
+      ZraApi__BaseUrl: http://host.docker.internal:8080/vdsc/
 
 volumes:
   rabbitmq_data:
