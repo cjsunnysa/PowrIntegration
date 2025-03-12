@@ -56,6 +56,8 @@ internal sealed class BackOfficeQueueConsumer(
 
     private async Task<Result> HandleStandardCodeMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Received import standard codes message.");
+
         using var stream = new MemoryStream(body.ToArray());
 
         var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<StandardCodeClassDto>>(stream, cancellationToken: cancellationToken);
@@ -73,6 +75,8 @@ internal sealed class BackOfficeQueueConsumer(
 
     private async Task<Result> HandleClassificationCodeMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Received import classification codes message.");
+
         using var stream = new MemoryStream(body.ToArray());
 
         var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<ClassificationCodeDto>>(stream, cancellationToken: cancellationToken);
@@ -209,6 +213,8 @@ internal sealed class BackOfficeQueueConsumer(
 
     private async Task<Result> HandleZraImportItemsMessage(ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Received import ZRA Import Items message.");
+
         using var stream = new MemoryStream(body.ToArray());
 
         var dtos = await JsonSerializer.DeserializeAsync<ImmutableArray<ImportItemDto>>(stream, cancellationToken: cancellationToken);
@@ -237,6 +243,8 @@ internal sealed class BackOfficeQueueConsumer(
             return Result.Fail($"Cannot deserialize message. Message body is not a valid purchase. Body: {bodyString}");
         }
 
+        _logger.LogInformation("Received purchase message for SupplierTaxPayerIdentifier: {SupplierTaxPayerIdentifier} SupplierInvoiceNumber: {SupplierInvoiceNumber}.", dto.SupplierTaxPayerIdentifier, dto.SupplierInvoiceNumber);
+
         return await _purchaseExport.Execute(dto, cancellationToken);
     }
 
@@ -252,6 +260,8 @@ internal sealed class BackOfficeQueueConsumer(
 
             return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
         }
+
+        _logger.LogInformation("Received item insert message for PluNumber: {PluNumber}.", dto.PluNumber);
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -288,6 +298,8 @@ internal sealed class BackOfficeQueueConsumer(
 
             return Result.Fail($"Cannot deserialize message. Message body is not a valid item. Body: {bodyString}");
         }
+
+        _logger.LogInformation("Received item update message for PluNumber: {PluNumber}.", dto.PluNumber);
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
