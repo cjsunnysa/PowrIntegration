@@ -362,5 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-/rabbitmq
-/grafana
+# container generated folders
+rabbitmq/
+grafana/
