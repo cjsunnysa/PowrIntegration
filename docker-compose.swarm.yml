@@ -1,36 +1,46 @@
 services:
     otel-collector:
+        hostname: otel-collector
         deploy:
             mode: global
 
     prometheus:
+        hostname: prometheus
         deploy:
             mode: global
 
     loki:
+        hostname: loki
         deploy:
             mode: global
 
     jaeger:
+        hostname: jaeger
         deploy:
             mode: global
 
     grafana:
+        hostname: grafana
         deploy:
             mode: global
 
     rabbitmq:
+        hostname: rabbitmq
         deploy:
             mode: global
 
     powrintegration-backoffice:
-        image: cjsunnysa/powrintegration-backoffice:release-latest
+        image: cjsunnysa/powrintegration-backoffice:dev-latest
+        hostname: powrintegration-backoffice
+        depends_on: [otel-collector, rabbitmq]
         deploy:
             mode: replicated
             replicas: 1
 
     powrintegration-zra:
-        image: cjsunnysa/powrintegration-zra:release-latest
+        image: cjsunnysa/powrintegration-zra:dev-latest
+        hostname: powrintegration-zra
+        depends_on: [otel-collector, rabbitmq]
         deploy:
             mode: replicated
             replicas: 1

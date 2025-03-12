@@ -81,12 +81,6 @@ services:
     container_name: powrintegration-backoffice
     environment:
       DOTNET_ENVIRONMENT: Release
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-        restart: true
-      otel-collector:
-        condition: service_started
     volumes:
       - C:\\PowrIntegration:/usr/local/powrintegration
       - C:\\PowerTill8:/export
@@ -97,12 +91,6 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Release
       ZraApi__BaseUrl: http://host.docker.internal:8080/vdsc/
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-        restart: true
-      otel-collector:
-        condition: service_started
 
 volumes:
   rabbitmq_data:
