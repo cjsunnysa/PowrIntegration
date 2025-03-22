@@ -4,6 +4,7 @@ using PowrIntegration.Shared.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Diagnostics.Metrics;
+using System.Text;
 
 namespace PowrIntegration.Shared.MessageQueue;
 
@@ -122,6 +123,10 @@ public abstract class RabbitMqConsumer
             var messageBody = new byte[basicDeliverEventArgs.Body.Length];
 
             basicDeliverEventArgs.Body.CopyTo(messageBody);
+
+            var bodyString = Encoding.UTF8.GetString(messageBody);
+
+            _logger.LogInformation("Received message with type: {MessageType} from queue: {QueueName}. Body: {MessageBody}", messageType.Value.ToLabel(), Options.Name, bodyString);
 
             MessageAction action = await HandleMessage(messageType.Value, messageBody, CancellationToken.None);
 

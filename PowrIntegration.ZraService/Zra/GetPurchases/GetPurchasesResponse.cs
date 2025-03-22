@@ -23,10 +23,10 @@ public sealed record GetPurchasesResponse : ZraResponse
                 public required decimal splyAmt { get; init; }
                 public required decimal dcRt { get; init; }
                 public required decimal dcAmt { get; init; }
-                public required string vatCatCd { get; init; }
-                public required string iplCatCd { get; init; }
-                public required string tlCatCd { get; init; }
-                public required string exciseTxCatC { get; init; }
+                public string? vatCatCd { get; init; }
+                public string? iplCatCd { get; init; }
+                public string? tlCatCd { get; init; }
+                public string? exciseTxCatC { get; init; }
                 public required decimal vatTaxblAmt { get; init; }
                 public required decimal exciseTaxblAmt { get; init; }
                 public required decimal iplTaxblAmt { get; init; }

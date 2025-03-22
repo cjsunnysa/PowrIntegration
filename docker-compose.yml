@@ -54,6 +54,10 @@ services:
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SMTP_ENABLED=false
+      - GF_SMTP_HOST=smtp.mail.yahoo.com:587
+      - GF_SMTP_FROM_ADDRESS=powerpos_alers@yahoo.com
+      - GF_SMTP_FROM_NAME="Power POS Alerts"
     depends_on:
       - prometheus
       - loki
@@ -77,7 +81,6 @@ services:
       retries: 5
 
   powrintegration-backoffice:
-    image: powrintegration-backoffice
     container_name: powrintegration-backoffice
     environment:
       DOTNET_ENVIRONMENT: Release
@@ -86,7 +89,6 @@ services:
       - C:\\PowerTill8:/export
 
   powrintegration-zra:
-    image: powrintegration-zra
     container_name: powrintegration-zra
     environment:
       DOTNET_ENVIRONMENT: Release

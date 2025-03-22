@@ -40,7 +40,7 @@ services:
             - "15672:15672" # Management console
 
     powrintegration-backoffice:
-        image: cjsunnysa/powrintegration-backoffice:dev-latest
+        image: cjsunnysa/powrintegration-backoffice:release-latest
         hostname: powrintegration-backoffice
         depends_on: [otel-collector, rabbitmq]
         deploy:
@@ -48,7 +48,7 @@ services:
             replicas: 1
 
     powrintegration-zra:
-        image: cjsunnysa/powrintegration-zra:dev-latest
+        image: cjsunnysa/powrintegration-zra:release-latest
         hostname: powrintegration-zra
         depends_on: [otel-collector, rabbitmq]
         deploy:
