@@ -44,6 +44,7 @@ All logs can be viewed using the Grafana application which is opened at http://l
 RabbitMQ
 --------
 The message queues can be viewed at http://localhost:15672/#/queues
+* The default credentials are guest:guest
 * The PowrIntegration application uses 4 queues: BackOffice, BackOfficeDead, Zra, ZraDead
 ![image](https://github.com/user-attachments/assets/b8211da7-2435-4c48-b487-d615484c1832)
 * The Dead queues are used for storing messages which the application fails to process.
