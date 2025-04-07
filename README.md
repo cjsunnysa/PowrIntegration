@@ -49,3 +49,8 @@ The message queues can be viewed at http://localhost:15672/#/queues
 ![image](https://github.com/user-attachments/assets/b8211da7-2435-4c48-b487-d615484c1832)
 * The Dead queues are used for storing messages which the application fails to process.
 
+Back-Office and Zra Services
+----------------------------
+* Configuration for these service can be updated in the docker-compose.yml file found in the release PowrIntegration.zip archive.
+![image](https://github.com/user-attachments/assets/6e8a9595-85c4-4c47-ad8d-8bd104fac619)
+* After you edit these config settings run the restard-services.ps1 script to restart all of the deployed containers.
