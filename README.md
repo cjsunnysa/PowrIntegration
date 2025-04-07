@@ -10,8 +10,7 @@ ZRA VSDC
 
 PowrIntegration
 ---------------
-* Download the folowing:
-[PowrIntegration.zip](https://github.com/user-attachments/files/19622508/PowrIntegration.zip)
+* Download the PowrIntegration.zip archive from the Releases section of this repository.
 * Extract to a folder eg. `C:\Containers\PowrIntegration`
 * Open Powershell as adminstrator.
 * Change directory to the where you extracted the zip file.
