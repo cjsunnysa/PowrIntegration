@@ -41,7 +41,6 @@ services:
 
     powrintegration-backoffice:
         image: cjsunnysa/powrintegration-backoffice:release-latest
-        hostname: powrintegration-backoffice
         depends_on: [otel-collector, rabbitmq]
         deploy:
             mode: replicated
@@ -49,7 +48,6 @@ services:
 
     powrintegration-zra:
         image: cjsunnysa/powrintegration-zra:release-latest
-        hostname: powrintegration-zra
         depends_on: [otel-collector, rabbitmq]
         deploy:
             mode: replicated

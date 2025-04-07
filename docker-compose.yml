@@ -1,7 +1,6 @@
 services:
   otel-collector:
     image: otel/opentelemetry-collector:0.120.0
-    container_name: otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./container-files/otel-collector-config.yaml:/etc/otel-collector-config.yaml
@@ -15,7 +14,6 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.1.0
-    container_name: prometheus
     volumes:
       - ./container-files/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -26,7 +24,11 @@ services:
 
   loki:
     image: grafana/loki:3.3.2
-    container_name: loki
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3100"]
+      interval: 10s
+      timeout: 5s
+      retries: 6  # Wait up to ~60s
     volumes:
       - ./container-files/loki-config.yaml:/etc/loki/local-config.yaml
     ports:
@@ -35,7 +37,6 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.65.0
-    container_name: jaeger
     environment:
       - COLLECTOR_ZIPKIN_HTTP_PORT=9411
     volumes:
@@ -47,11 +48,11 @@ services:
 
   grafana:
     image: grafana/grafana:11.5.2
-    container_name: grafana
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./container-files/loki-datasource.yaml:/etc/grafana/provisioning/datasources/loki.yaml
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SMTP_ENABLED=false
@@ -65,7 +66,6 @@ services:
   
   rabbitmq:
     image: rabbitmq:4.0.5-management
-    container_name: rabbitmq
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -81,18 +81,28 @@ services:
       retries: 5
 
   powrintegration-backoffice:
-    container_name: powrintegration-backoffice
     environment:
       DOTNET_ENVIRONMENT: Release
+      Service__TimeoutSeconds: 10
+      ZraApi__TaxMappings: |
+        '[
+            { "SalesGroupId": 44, "TaxGroupId": 2, "TaxTypeCode": "D" }, 
+            { "SalesGroupId": 62, "TaxGroupId": 2, "TaxTypeCode": "D" }
+        ]'
     volumes:
-      - C:\\PowrIntegration:/usr/local/powrintegration
       - C:\\PowerTill8:/export
+      - C:\\PowrIntegration:/usr/local/powrintegration
 
   powrintegration-zra:
-    container_name: powrintegration-zra
     environment:
       DOTNET_ENVIRONMENT: Release
+      Service__TimeoutSeconds: 10
       ZraApi__BaseUrl: http://host.docker.internal:8080/vdsc/
+      ZraApi__TaxMappings: |
+        '[
+            { "SalesGroupId": 44, "TaxGroupId": 2, "TaxTypeCode": "D" }, 
+            { "SalesGroupId": 62, "TaxGroupId": 2, "TaxTypeCode": "D" }
+        ]'
 
 volumes:
   rabbitmq_data:
