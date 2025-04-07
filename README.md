@@ -30,5 +30,22 @@ During the installation process a restart may be performed. When the computer ha
 
 The installation will start a stack of the containers required for PowrIntegration. Your system is now installed and running.
 
+Grafana
+-------
+Detailed documentation can be found here: https://grafana.com/docs/grafana/latest/
+
+All logs can be viewed using the Grafana application which is opened at http://localhost:3000
+* The default credentials are admin:admin
+* You can explore the logs from the menu on the left side under the Explore item:
+![image](https://github.com/user-attachments/assets/5b463e20-f049-496a-99bd-88c789340c4c)
+* You can drill into logs for each service by clicking the 'show logs' button for each service.
+* Errors are show with a red margin. Other logs are shown with a green margin.
+* You can click on the individual log line to expand the details.
+
 RabbitMQ
 --------
+The message queues can be viewed at http://localhost:15672/#/queues
+* The PowrIntegration application uses 4 queues: BackOffice, BackOfficeDead, Zra, ZraDead
+![image](https://github.com/user-attachments/assets/b8211da7-2435-4c48-b487-d615484c1832)
+* The Dead queues are used for storing messages which the application fails to process.
+
