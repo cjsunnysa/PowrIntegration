@@ -1,5 +1,21 @@
-Windows
-=======
+About
+=====
+PowrIntegration is a suite of containerized [Docker](https://www.docker.com) applications which provide integration functionality between Powertill point-of-sale software and the Zambian Revenue Authority to track VAT collection.
+
+It is comprised of the follwing services:
+- backoffice - stores and transforms data from Powrtill and between itself and the zra service.
+- zra - consumes messages from the backoffice service, communicates with the ZRA VSDC API and publishes messages to the backoffice service.
+- rabbitmq - provides queues for asynchronous communication:
+  - BackOffice - queue for messages intended for processing by the backoffice service.
+  - BackOfficeDead - a dead-letter queue where messages that cannot be processed are placed.
+  - Zra - queue for messages intended for processing by the zra service.
+  - ZraDead - a dead-letter queue where messages that cannot be processed are placed.
+- prometheus - provides a store for application and resource metrics.
+- loki - provides a store for metadata indexed logs.
+- grafana - provides a portal for creating dashboards, querying log and metric data, configuring and executing alert notifications.
+
+Windows Installation
+====================
 
 ZRA VSDC
 --------
@@ -20,14 +36,16 @@ PowrIntegration
 * Run the install.ps1 script
 `.\install.ps1`
 
-The installation will check for a few pre-requisites and install them if necessary:
-* The Windows Sub-System for Linux (WSL2) - The containers run on a Linux operating system
-* Docker Desktop - The container engine
-* Enabling Docker Desktop to run in Swarm mode - A production mode for managing multiple container instances.
-
-During the installation process a restart may be performed. When the computer has restarted: open Powershell as an Adminstrator and run the install.ps1 script again.
-
-The installation will start a stack of the containers required for PowrIntegration. Your system is now installed and running.
+The installation will execute the following in order:
+* Are you running the script with Administrator priveleges. Will fail if not.
+* Is the Windwos Subsystem for Linux feature enabled. Will enable if not. This is required for running Linux based containers on Windows.
+* Is Docker Desktop Installed. Will download and install if not. This is required to host and orchestrate Docker containers.
+* A restart will happen after Docker Desktop is installed. When the machine is restarted open a terminal as Administrator and run the install.ps1 script again.
+* Is Docker Desktop running. Will start Docker Desktop if not.
+* Is Docker Desktop Swarm mode enabled. Will enable if not. This is required for automatic restarting of containers if they fail and horizontal scaling of containers to meet processing demand.
+* Is the PowrIntegration stack already deployed. Will remove if so.
+* Are any ports required by the PowrIntegration stack of applications already in use. Will report on ports in use and fail if so.
+* Is the PowrIntegration stack running. Will deploy and run if not.
 
 Grafana
 -------
