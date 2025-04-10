@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PowrIntegration.BackOfficeService.Data;
 using PowrIntegration.BackOfficeService.Data.Entities;
+using PowrIntegration.BackOfficeService.Observability;
 using PowrIntegration.BackOfficeService.Options;
 using PowrIntegration.Shared.Dtos;
 using PowrIntegration.Shared.MessageQueue;
@@ -46,7 +47,7 @@ internal sealed class PurchaseFileExport(IOptions<PowertillOptions> options, IOp
         {
             string purchaseString = Encoding.UTF8.GetString(serializedPurchaseStream.ToArray());
 
-            return Result.Fail(new Error($"Error exporting purchase. Not all PLUs exist for all purchase items. Purchase: {purchaseString}"));
+            return Result.Fail(new Error($"Code: {LoggingErrorCode.UNABLE_TO_PROCESS_PURCHASE_PLU}, Error exporting purchase. Not all PLUs exist for all purchase items. Purchase: {purchaseString}"));
         }
 
         string fileName = $"{purchase.SupplierName}-{purchase.SupplierInvoiceNumber}.csa";
@@ -80,7 +81,7 @@ internal sealed class PurchaseFileExport(IOptions<PowertillOptions> options, IOp
 
         sb.AppendLine($"{RecordType.FileName},{filePath},XfrSrc,2,XfrDest,1,XfrRef,{purchase.SupplierInvoiceNumber},XfrNo,1");
 
-        sb.AppendLine($"{RecordType.Header},1,{supplierIdentifier},{purchase.SupplierName},{purchase.SupplierInvoiceNumber},{purchase.SalesDate.ToPowertillDate()},{purchase.SalesDate.ToPowertillDate()},{purchase.TotalTaxableAmount},{purchase.TotalTaxAmount},0.00,0.00,0.00,0.00,{purchase.TotalAmount},0.00,,Ver8.0");
+        sb.AppendLine($"{RecordType.Header},1,{supplierIdentifier},{purchase.SupplierName},{purchase.SupplierInvoiceNumber},{purchase.SalesDate:dd/MM/yyyy},{purchase.SalesDate:dd/MM/yyyy},{purchase.TotalTaxableAmount},{purchase.TotalTaxAmount},0.00,0.00,0.00,0.00,{purchase.TotalAmount},0.00,,Ver8.0");
 
         foreach (var line in purchase.Items)
         {

@@ -4,12 +4,13 @@
     <ProjectVersion>2.1</ProjectVersion>
     <DockerTargetOS>Linux</DockerTargetOS>
     <ProjectGuid>2c5d3338-5275-45be-8b25-a5f5c6adf41e</ProjectGuid>
-	<DockerLaunchProfile>Docker Compose</DockerLaunchProfile>
+    <DockerLaunchProfile>Docker Compose</DockerLaunchProfile>
     <DockerComposeProjectName>powrintegration</DockerComposeProjectName>
-	<AdditionalComposeFilePaths>docker-compose.development.yml</AdditionalComposeFilePaths>
+    <AdditionalComposeFilePaths>docker-compose.development.yml</AdditionalComposeFilePaths>
   </PropertyGroup>
   <ItemGroup>
     <None Include=".dockerignore" />
+    <None Include="container-files\loki-datasource.yaml" />
     <None Include="docker-compose.yml" />
     <None Include="docker-compose.development.yml" />
     <None Include="container-files\loki-config.yaml" />

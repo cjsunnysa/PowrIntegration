@@ -250,7 +250,7 @@ public class ZraRestService(HttpClient httpClient, IOptions<ZraApiOptions> apiOp
         }
     }
 
-    public async Task<Result<ImmutableArray<ImportItemDto>>> GetImports(CancellationToken cancellationToken)
+    public async Task<Result<ImmutableArray<ImportItemDto>>> FetchImports(CancellationToken cancellationToken)
     {
         try
         {
@@ -299,7 +299,7 @@ public class ZraRestService(HttpClient httpClient, IOptions<ZraApiOptions> apiOp
         }
     }
 
-    public async Task<Result<ImmutableArray<PurchaseDto>>> GetPurchases(CancellationToken cancellationToken)
+    public async Task<Result<ImmutableArray<PurchaseDto>>> FetchPurchases(CancellationToken cancellationToken)
     {
         try
         {
@@ -317,6 +317,8 @@ public class ZraRestService(HttpClient httpClient, IOptions<ZraApiOptions> apiOp
             {
                 return Result.Fail(new Error($"Error response from ZRA API Get Purchases request. Status: {httpResponse.StatusCode} Reason: {httpResponse.ReasonPhrase}."));
             }
+
+            var bodyString = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
             var response = await httpResponse.Content.ReadFromJsonAsync<GetPurchasesResponse>(cancellationToken: cancellationToken);
 

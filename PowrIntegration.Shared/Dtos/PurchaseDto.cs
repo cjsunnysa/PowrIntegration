@@ -10,9 +10,9 @@ public sealed record PurchaseDto
     public required long SupplierInvoiceNumber { get; init; } // NUMBER(38)
     public required string RecieptTypeCode { get; init; } // VARCHAR(5)
     public required string PaymentTypeCode { get; init; } // VARCHAR(5)
-    public required string ConfirmedDate { get; init; } // VARCHAR(14), ISO 8601 datetime format
-    public required string SalesDate { get; init; } // VARCHAR(8), ISO 8601 date format (yyyyMMdd)
-    public string? StockReleaseDate { get; init; } // VARCHAR(14), Nullable, ISO 8601 datetime format
+    public required DateTime ConfirmedDate { get; init; } // VARCHAR(14), ISO 8601 datetime format
+    public required DateTime SalesDate { get; init; } // VARCHAR(8), ISO 8601 date format (yyyyMMdd)
+    public DateTime? StockReleaseDate { get; init; } // VARCHAR(14), Nullable, ISO 8601 datetime format
     public required int TotalItemCount { get; init; } // NUMBER(10)
     public required decimal TotalTaxableAmount { get; init; } // NUMBER(18,4)
     public required decimal TotalTaxAmount { get; init; } // NUMBER(18,2)

@@ -1,6 +1,3 @@
-$flagFile = "ContinueFlag.txt"
-$isContinuation = Test-Path $flagFile
-
 function EnsureAdmin {
 	$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
@@ -12,20 +9,11 @@ function EnsureAdmin {
     }
 }
 
-function Check-Continuation {
-	if ($isContinuation) {
-		Write-Host "Continuing after reboot..."
-		Deregister-Continue
-	} else {
-		Write-Host "Starting initial run..."
-	}
-}
-
 function Enable-WSL {
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
     if ($wslFeature.State -ne "Enabled") {
-        Write-Host "Enabling WSL..." -ForegroundColor Yellow
+        Write-Output "Enabling WSL..."
         Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
         Write-Host "WSL enabled. A restart may be required." -ForegroundColor Green
     } else {
@@ -45,87 +33,122 @@ function Install-Docker {
 			Invoke-WebRequest -Uri "https://desktop.docker.com/win/stable/Docker%20Desktop%20Installer.exe" -OutFile $dockerInstaller
 		}
 
-		Write-Host "Installing Docker Desktop..." -ForegroundColor Yellow
+		Write-Output "Installing Docker Desktop..."
 		Start-Process -FilePath $dockerInstaller -ArgumentList "install --quiet --accept-license --backend=wsl-2 --always-run-service" -Wait -NoNewWindow
-		Write-Host "Docker installation complete. Restarting your system." -ForegroundColor Green
-
-		# Schedule the script to run after reboot
-		Register-Continue
 		
-		# Trigger reboot
-		Write-Host "Rebooting now..."
+		Write-Host "Docker installation complete. Restarting your system." -ForegroundColor Green
 		Restart-Computer -Force
 	}
 }
 
-function Register-Continue {
-	# Create a flag to indicate continuation
-	"Continue" | Out-File $flagFile
-	
-	# Get the path of the current script
-	$scriptPath = $PSCommandPath
-	$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
+function Ensure-Docker-Running {
+	# Check if the Docker Desktop process is currently active.
+	$dockerProcess = Get-Process -Name "Docker Desktop" -ErrorAction SilentlyContinue
 
-	# Define the Startup folder path
-	$startupFolder = [Environment]::GetFolderPath("Startup")
-	$shortcutPath = Join-Path $startupFolder "$scriptName.lnk"
-
-	# Check if the shortcut already exists, if not, create it
-	if (-not (Test-Path $shortcutPath)) {
-		# Create a shell object to make the shortcut
-		$shell = New-Object -ComObject WScript.Shell
-		$shortcut = $shell.CreateShortcut($shortcutPath)
-		
-		# Set the target to PowerShell running this script
-		$shortcut.TargetPath = "powershell.exe"
-		$shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
-		$shortcut.WorkingDirectory = Split-Path $scriptPath -Parent
-		$shortcut.Description = "Runs $scriptName as Administrator"
-		
-		# Optional: Set an icon (default PowerShell icon here)
-		$shortcut.IconLocation = "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
-		
-		# Save the shortcut
-		$shortcut.Save()
-
-		# Set the shortcut to run as administrator
-		$bytes = [System.IO.File]::ReadAllBytes($shortcutPath)
-		$bytes[0x15] = $bytes[0x15] -bor 0x20 # Set byte 21 (0x15) bit 6 to enable RunAsAdmin
-		[System.IO.File]::WriteAllBytes($shortcutPath, $bytes)
-
-		Write-Host "Shortcut created at $shortcutPath with Run as Administrator enabled."
+	if ($dockerProcess) {
+		# If the process is found, inform the user that Docker Desktop is already operational.
+		Write-Host "Docker Desktop is currently running." -ForegroundColor Green
 	} else {
-		Write-Host "Shortcut already exists at $shortcutPath."
+		# If the process is not found, proceed to start Docker Desktop.
+		Write-Output "Docker Desktop is not running. Attempting to start it now."
+		
+		# Define the typical installation path for Docker Desktop executable.
+		$dockerPath = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+		
+		# Verify if the executable exists at the specified location.
+		if (Test-Path -Path $dockerPath) {
+			# Launch Docker Desktop using the Start-Process cmdlet.
+			Start-Process -FilePath $dockerPath
+			Write-Output "Docker Desktop has been initiated successfully."
+			Write-Host "Waiting 10 seconds for start-up to complete." -ForegroundColor Yellow
+			# Brief pause to allow the process status to update, if needed.
+			Start-Sleep -Seconds 10
+			Write-Host "Docker Desktop started." -ForegroundColor Green
+		} else {
+			# If the executable is not found, notify the user of the issue.
+			Write-Host "Error: Docker Desktop executable not found at the expected path: $dockerPath. Please verify the installation." -ForegroundColor Red
+		}
 	}
 }
 
-function Deregister-Continue {
-	Remove-Item $flagFile
-	# Get the path of the current script
+function Is-Stack-Running {
+	$stackList = docker stack ls --format "{{.Name}}"
 	
-	$scriptPath = $PSCommandPath
-	$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
+	if ($stackList -contains "powrintegration_compose") {
+		return $true
+	}
+	
+	return $false
+}
 
-	# Define the Startup folder path
-	$startupFolder = [Environment]::GetFolderPath("Startup")
-	$shortcutPath = Join-Path $startupFolder "$scriptName.lnk"
+function Remove-Docker-Stack {
+	docker stack rm powrintegration_compose
+}
 
-	# Check if the shortcut exists and remove it
-	if (Test-Path $shortcutPath) {
-		Remove-Item -Path $shortcutPath -Force
-		Write-Host "Shortcut removed from $shortcutPath."
+function Check-Required-Ports {
+	Write-Output "Checking if Docker stack is running.."
+	if (Is-Stack-Running) {
+		Write-Host "Stack is already running. Removing stack.." -ForegroundColor Yellow
+		Remove-Docker-Stack
+		Start-Sleep -Seconds 5
+		Write-Host "Docker stack removed." -ForegroundColor Green
+	}
+	else {
+		Write-Host "Docker stack is not running." -ForegroundColor Green
+	}
+	
+	# Define the list of ports to check
+	$ports = @(15672, 9090, 4317, 3100, 14250, 3000)
+
+	# Initialize an empty array to store results
+	$results = @()
+
+	# Loop through each port and test if it is in use
+	foreach ($port in $ports) {
+		try {
+			# Test the connection to localhost on the specified port
+			$test = Test-NetConnection -ComputerName "localhost" -Port $port -WarningAction SilentlyContinue
+			
+			# Determine if the port is in use based on the TcpTestSucceeded property
+			$status = if ($test.TcpTestSucceeded) { "Yes" } else { "No" }
+			
+			# Create a custom object with the port number and its status
+			$results += [PSCustomObject]@{
+				Port   = $port
+				Used   = $status
+			}
+		}
+		catch {
+			# Handle any errors that occur during the test
+			$results += [PSCustomObject]@{
+				Port   = $port
+				Used   = "Error: $($_.Exception.Message)"
+			}
+		}
+	}
+
+	# Display the results in a formatted table
+	$results | Format-Table -AutoSize
+
+	# Optional: Summary of ports in use
+	$portsInUse = $results | Where-Object { $_.Status -eq "Yes" }
+	if ($portsInUse) {
+		Write-Host "Summary: The following ports are currently in use:" -ForegroundColor Red
+		$portsInUse | ForEach-Object { Write-Host " - Port $($_.Port)" -ForegroundColor Red }
+		exit 1
 	} else {
-		Write-Host "No shortcut found at $shortcutPath."
+		Write-Host "None of the required ports are currently in use." -ForegroundColor Green
 	}
 }
+
 
 function Enable-Swarm {
-	Write-Host "Checking if Docker Swarm is enabled..." -ForegroundColor Yellow
+	Write-Output "Checking if Docker Swarm is enabled..."
 	
 	$swarmStatus = docker info | Select-String "Swarm: active"
 	
 	if (-not $swarmStatus) {
-		Write-Host "Initializing Docker Swarm mode..." -ForegroundColor Yellow
+		Write-Output "Initializing Docker Swarm mode..."
 		docker swarm init
 		Write-Host "Docker Swarm mode enabled." -ForegroundColor Green
 	} else {
@@ -134,7 +157,7 @@ function Enable-Swarm {
 }
 
 function Deploy-Compose {
-	$isStackDeployed = docker service ls --filter "name=powrintegration_compose_powrintegration-backoffice" --format '{{json .}}' | convertfrom-json | select-object -first 1
+	$isStackDeployed = Is-Stack-Running
 	
 	if ($isStackDeployed) {
 		Write-Host "Docker stack is already deployed and running." -ForegroundColor Green
@@ -142,7 +165,7 @@ function Deploy-Compose {
 	}
 	
 	if (Test-Path "docker-compose.swarm.yml") {
-		Write-Host "Deploying services using Docker Compose..." -ForegroundColor Yellow
+		Write-Output "Deploying services using Docker Compose..."
 		docker stack deploy -c docker-compose.yml -c docker-compose.swarm.yml powrintegration_compose
 		Write-Host "Services deployed successfully." -ForegroundColor Green
 	} else {
@@ -151,8 +174,9 @@ function Deploy-Compose {
 }
 
 EnsureAdmin
-Check-Continuation
 Enable-WSL
 Install-Docker
+Ensure-Docker-Running
+Check-Required-Ports
 Enable-Swarm
 Deploy-Compose

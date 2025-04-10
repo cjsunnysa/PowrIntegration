@@ -1,5 +1,24 @@
 services:
+  otel-collector:
+    container_name: otel-collector
+
+  rabbitmq:
+    container_name: rabbitmq
+
+  jaeger:
+    container_name: jaeger
+
+  loki:
+    container_name: loki
+
+  prometheus:
+    container_name: prometheus
+
+  grafana:
+    container_name: grafana
+
   powrintegration-backoffice:
+    container_name: powrintegration_backoffice
     image: powrintegration-backoffice:dev
     build:
       context: .
@@ -16,6 +35,7 @@ services:
       DOTNET_ENVIRONMENT: Development
 
   powrintegration-zra:
+    container_name: powrintegration_zra
     image: powrintegration-zra:dev
     build:
       context: .

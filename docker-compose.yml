@@ -1,7 +1,6 @@
 services:
   otel-collector:
     image: otel/opentelemetry-collector:0.120.0
-    container_name: otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./container-files/otel-collector-config.yaml:/etc/otel-collector-config.yaml
@@ -15,7 +14,6 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.1.0
-    container_name: prometheus
     volumes:
       - ./container-files/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -26,16 +24,16 @@ services:
 
   loki:
     image: grafana/loki:3.3.2
-    container_name: loki
+    user: root
     volumes:
       - ./container-files/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/tmp/loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
 
   jaeger:
     image: jaegertracing/all-in-one:1.65.0
-    container_name: jaeger
     environment:
       - COLLECTOR_ZIPKIN_HTTP_PORT=9411
     volumes:
@@ -47,13 +45,17 @@ services:
 
   grafana:
     image: grafana/grafana:11.5.2
-    container_name: grafana
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./container-files/loki-datasource.yaml:/etc/grafana/provisioning/datasources/loki.yaml
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SMTP_ENABLED=false
+      - GF_SMTP_HOST=smtp.mail.yahoo.com:587
+      - GF_SMTP_FROM_ADDRESS=powerpos_alers@yahoo.com
+      - GF_SMTP_FROM_NAME="Power POS Alerts"
     depends_on:
       - prometheus
       - loki
@@ -61,7 +63,6 @@ services:
   
   rabbitmq:
     image: rabbitmq:4.0.5-management
-    container_name: rabbitmq
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -77,23 +78,32 @@ services:
       retries: 5
 
   powrintegration-backoffice:
-    image: powrintegration-backoffice
-    container_name: powrintegration-backoffice
     environment:
       DOTNET_ENVIRONMENT: Release
+      Service__TimeoutSeconds: 10
+      ZraApi__TaxMappings: |
+        '[
+            { "SalesGroupId": 44, "TaxGroupId": 2, "TaxTypeCode": "D" }, 
+            { "SalesGroupId": 62, "TaxGroupId": 2, "TaxTypeCode": "D" }
+        ]'
     volumes:
-      - C:\\PowrIntegration:/usr/local/powrintegration
       - C:\\PowerTill8:/export
+      - C:\\PowrIntegration:/usr/local/powrintegration
 
   powrintegration-zra:
-    image: powrintegration-zra
-    container_name: powrintegration-zra
     environment:
       DOTNET_ENVIRONMENT: Release
-      ZraApi__BaseUrl: http://host.docker.internal:8080/vdsc/
+      Service__TimeoutSeconds: 10
+      ZraApi__BaseUrl: http://0.0.0.0:8080/sandboxvdsc/
+      ZraApi__TaxMappings: |
+        '[
+            { "SalesGroupId": 44, "TaxGroupId": 2, "TaxTypeCode": "D" }, 
+            { "SalesGroupId": 62, "TaxGroupId": 2, "TaxTypeCode": "D" }
+        ]'
 
 volumes:
   rabbitmq_data:
   grafana_data:
   prometheus_data:
+  loki_data:
   jaeger_data:  

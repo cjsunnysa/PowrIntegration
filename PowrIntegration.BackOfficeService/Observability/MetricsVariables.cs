@@ -7,3 +7,4 @@ public class MetricsVariables : IMetrics
     public string ApplicationName => "PowrIntegration.BackOfficeService";
     public string MetricsMeterName => $"{ApplicationName}.Metrics";
 }
+

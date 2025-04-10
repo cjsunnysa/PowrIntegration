@@ -101,7 +101,7 @@ internal class Worker(
 
     private async Task FetchPurchases(BackOfficeQueuePublisher queuePublisher, CancellationToken cancellationToken)
     {
-        var fetchPurchases = await _zraService.GetPurchases(cancellationToken);
+        var fetchPurchases = await _zraService.FetchPurchases(cancellationToken);
 
         fetchPurchases.LogErrors(_logger);
 
@@ -117,7 +117,7 @@ internal class Worker(
 
     private async Task FetchImports(BackOfficeQueuePublisher queuePublisher, CancellationToken cancellationToken)
     {
-        var fetchImports = await _zraService.GetImports(cancellationToken);
+        var fetchImports = await _zraService.FetchImports(cancellationToken);
 
         fetchImports.LogErrors(_logger);
 
