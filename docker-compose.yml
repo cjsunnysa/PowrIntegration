@@ -24,13 +24,10 @@ services:
 
   loki:
     image: grafana/loki:3.3.2
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "3100"]
-      interval: 10s
-      timeout: 5s
-      retries: 6  # Wait up to ~60s
+    user: root
     volumes:
       - ./container-files/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/tmp/loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -97,7 +94,7 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Release
       Service__TimeoutSeconds: 10
-      ZraApi__BaseUrl: http://host.docker.internal:8080/vdsc/
+      ZraApi__BaseUrl: http://0.0.0.0:8080/sandboxvdsc/
       ZraApi__TaxMappings: |
         '[
             { "SalesGroupId": 44, "TaxGroupId": 2, "TaxTypeCode": "D" }, 
@@ -108,4 +105,5 @@ volumes:
   rabbitmq_data:
   grafana_data:
   prometheus_data:
+  loki_data:
   jaeger_data:  
