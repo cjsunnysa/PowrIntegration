@@ -27,15 +27,3 @@ jobs:
     secrets:
       dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
-
-  build-email-relay:
-    uses: ./.github/workflows/docker-build-and-push.yml
-    with:
-      image_name: "email-relay"
-      tag_prefix: ""
-      context: "./email-relay"
-      dockerfile: "./email-relay/Dockerfile"
-    secrets:
-      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
-      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
-  
