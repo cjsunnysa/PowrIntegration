@@ -72,3 +72,8 @@ Back-Office and Zra Services
 * Configuration for these service can be updated in the docker-compose.yml file found in the release PowrIntegration.zip archive.
 ![image](https://github.com/user-attachments/assets/6e8a9595-85c4-4c47-ad8d-8bd104fac619)
 * After you edit these config settings run the restart-services.ps1 script to restart all of the deployed containers.
+
+Create Item Sequence Diagram
+----------------------------
+![CreateItemSequenceDiagramMermaid](https://github.com/user-attachments/assets/b257c0ec-899d-4c9c-9295-253627d0a9a8)
+
